@@ -1,0 +1,67 @@
+{
+  "@@locale": "zh",
+  "appTitle": "职场政治",
+  "appTagline": "预判下一步。在办公室里走动。",
+  "language": "语言",
+  "languageEnglish": "EN",
+  "languageSimplifiedChinese": "简体",
+  "languageTraditionalChinese": "繁體",
+  "arcadeTitle": "街机",
+  "arcadeBody": "横屏办公室小游戏：拍同事、追回功劳、翻转谣言、躲开五点同步。",
+  "coachTitle": "教练",
+  "coachBody": "私密建议、回复推演、情景演练。",
+  "mapTitle": "办公室地图",
+  "mapBody": "摆放工位和同事。后续步骤提供。",
+  "comingNext": "下一步",
+  "landscapeOnly": "本应用仅支持横屏。",
+  "authSubtitle": "需要账户。教练数据只属于你。",
+  "sensitiveWarning": "请勿上传机密或敏感材料。同事请使用化名。",
+  "email": "邮箱",
+  "password": "密码",
+  "signIn": "登录",
+  "createAccount": "创建账户",
+  "haveAccount": "已有账户？去登录",
+  "needAccount": "还没有账户？去创建",
+  "account": "账户",
+  "signOut": "退出登录",
+  "exportAccount": "导出我的数据",
+  "deleteAccount": "删除账户",
+  "deleteAccountConfirm": "将永久删除此设备上的账户；若已连接 Supabase，云端记录也会删除。",
+  "deleteAccountAction": "永久删除",
+  "cancel": "取消",
+  "planFree": "免费",
+  "planPremium": "订阅",
+  "planContest": "竞赛通行证",
+  "planExpires": "有效期至 {date}",
+  "@planExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumUntilForever": "订阅有效",
+  "paywallTitle": "教练功能需要订阅",
+  "paywallBody": "街机竞赛保持免费。订阅后可使用教练；也可参加每日、每周、每月竞赛赢取限时通行证。如果更愿意花时间而不是花钱，激励广告会在竞赛里给你公平的机会。",
+  "subscribe": "订阅",
+  "subscribeHint": "应用商店扣费稍后接入。现在会发放 30 天通行证，方便后续功能读取真实的权限标记。",
+  "contestCta": "返回街机",
+  "exported": "账户导出已复制",
+  "invalidCredentials": "邮箱或密码不正确。",
+  "emailTaken": "该邮箱已有账户。",
+  "weakPassword": "请使用至少 8 个字符。",
+  "invalidEmail": "请输入有效邮箱。",
+  "confirmEmail": "请查收邮件以确认账户。",
+  "genericError": "出了点问题，请重试。",
+  "coachLocked": "需要订阅",
+  "accountEmail": "当前登录 {email}",
+  "@accountEmail": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "localAccountNote": "演示账户保存在此设备。连接 Supabase 后可使用云端账户。",
+  "cloudAccountNote": "云端账户。导出和删除会作用于服务器记录。"
+}

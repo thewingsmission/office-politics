@@ -52,6 +52,7 @@ Closest products found are [Tough Day](https://tough.day/product) for confidenti
 Differentiate by combining:
 - Persistent person, relationship, event, claim, and evidence records.
 - A visual office layout linked to characters and relationship context.
+- A cartoon colleague face lab and a hyperactive arcade layer on a fictional office floor, with daily/weekly/monthly contests that can unlock a subscription pass.
 - A counterfactual next-move simulator that compares the likely branches caused by different user replies.
 - Evidence/uncertainty-aware scenario analysis rather than unsupported “hidden agenda” certainty.
 - On-device OCR and short-form dictation, multilingual from launch.
@@ -64,7 +65,7 @@ Differentiate by combining:
 
 1. Onboarding: choose English, Simplified Chinese, or Traditional Chinese; show the one-time sensitive-data warning and explain AI limitations; create an account; choose retention settings. Before the first third-party AI transmission, explicitly name the provider, explain what data will be sent and why, collect revocable consent, and then remember that choice.
 2. Workspace setup: define the user’s role, organization context, goals, constraints, reporting structure, and preferred pseudonyms.
-3. Character setup: collect display name/pseudonym, role/title, team, seniority, reporting line, decision authority, resource control, communication style, incentives/goals as perceived by the user, known constraints, trust history, interaction frequency, and neutral free-text notes. The AI returns a concise editable summary and marks interpretations as user-reported.
+3. Character setup: collect display name/pseudonym, role/title, team, seniority, reporting line, decision authority, resource control, communication style, incentives/goals as perceived by the user, known constraints, trust history, interaction frequency, and neutral free-text notes. Include a parametric cartoon **face lab** (head, hair, brows, eyes, mouth, office accessories, signature expression) so the colleague can appear on the private map and in arcade games. Do not store a “hated” flag on the profile. The AI returns a concise editable summary and marks interpretations as user-reported.
 4. Relationship setup: directional relationship for each relevant pair—not every mathematical pair by default—with work dependency, authority, influence channel, cooperation/conflict history, communication frequency, trust level, recent trend, key evidence, and user uncertainty. Avoid fixed “enemy/loyalty” scores.
 5. Event journal: date/time, participants, location/channel, exact words/actions, business context, impact, witnesses, commitments, linked artifacts, user response, follow-up, and status. Preserve source and revisions separately from AI summaries.
 6. Ask for advice: typed text, selected people/events, OCR import, or dictation. Return neutral restatement, observations, unknowns, alternative hypotheses, evidence for/against, likely next moves as scenarios, low-risk options, scripts, escalation considerations, and confidence rationale.
@@ -73,8 +74,43 @@ Differentiate by combining:
 9. Reply simulator: paste or OCR an incoming email, draft multiple replies, compare predicted colleague responses and harm/risk branches, choose one, and later record the real outcome.
 10. Business outlook: define the employer’s industry, countries, business lines, competitors, and exposure factors; receive cited macro trend summaries and see which assumptions were used in advice.
 11. Motto cards: show a sourced motto that matches the current lesson, with interpretation and an option to browse/save favorites.
+12. Arcade contests: joystick movement on a fictional office floor; play Slap Desk plus Credit Chase, Rumour Flip, and 5pm Ghost; optional rewarded-ad continues; daily/weekly/monthly skill contests that can grant a time-limited premium pass.
 
 Defer employer dashboards, coworker recording, passive monitoring, automatic email-account ingestion, cross-user social graphs, and organization-wide analytics.
+
+## Arcade contests and hyperactive mini-games
+
+The coaching product stays subscription-gated. Arcade contests are a separate public layer: play free, watch rewarded ads for in-game help, win a time-limited premium pass, or subscribe. Contests are skill-based, not lotteries.
+
+Use a **fictional contest floor**, never the user’s real office layout, real names, private notes, or relationship scores. Cartoon avatars only. Photoreal photos, face-from-photo, and share cards that identify a real colleague are out of scope. Leaderboards show score and a generic office, not who was slapped or set against whom.
+
+Arcade fantasy is not coaching. Advice, roleplay, and the reply simulator must never recommend slap, rumor-sparking, trapping colleagues, or skipping work as a real next move. After slap or fight animations, keep a short line that this is fiction.
+
+Joystick: virtual stick to dash. Primary action button for slap / reclaim / confirm. One-finger swipe or flick for Rumour Flip. Hit-stop, squash-and-stretch faces, and high spawn rates. Daily 60–90s, weekly 5–8 min variant, monthly multi-floor rush.
+
+Rewarded ads buy continues, a few extra seconds, slow-mo, or one reveal of a patrol/vision cone. Cap ads per run. Do not punish ad use on the leaderboard. Advertising SDKs are allowed only in this arcade module, never on case files, OCR, or advice screens.
+
+### Slap Desk
+
+Must-have catharsis mode. Dash on the floor and slap the session target’s cartoon head as it pops over cubicles, kitchen glass, and meeting-room doors. Wrong-person slaps break combo. Score from target slaps, max combo, and leftover time.
+
+### Credit Chase
+
+Colleagues wander an obstacle-filled area. Each carries stolen credit tokens (slides, ideas, numbers) floating above them. The user traces a thief, closes into tag range, and yanks the credit back with the action button (slap or grab). A reclaimed token flies to the user; if missed, another thief can snatch it. Score equals credits taken back, plus leftover time. Weekly variant: credits bounce between thieves; monthly: a vacuum boss that steals from the user unless stunned.
+
+### Rumour Flip
+
+Rumour speech bubbles spawn above walking pairs. The user dashes to a bubble and uses a flick/swipe gesture to peel the polite rumour and leave the **honest subtext** (cartoon “what they actually think of the listener”). The listener hears that line, gets mad, and the pair enters a short cartoon fight. Each fight scores. Hitting the wrong bubble, flipping onto an innocent, or letting a rumour reach the skip-level without a flip costs points. Honest lines and fights are generated arcade fiction, never the user’s private notes about real people.
+
+### 5pm Ghost
+
+A few colleagues wander slowly among desks, plants, and partitions. Each has a forward pie-slice vision cone (field of view). If the cone overlaps the user, the user is discovered and dragged into a 5pm “quick sync” (round fail or life lost). The user must stay out of cones, use obstacles as cover, and reach the exit. Score from successful escape, leftover time, and near-miss bonuses. Weekly: extra wanderers and moving doors. Monthly: lights dim and cones lengthen after 5pm.
+
+| Contest | Length | Prize |
+|---|---|---|
+| Daily | 60–90s, one of the four modes | 24 hours of premium |
+| Weekly | longer map, same mode all week | 7 days |
+| Monthly | multi-floor mix of the four modes | 1 month |
 
 ## Architecture and storage
 
@@ -89,7 +125,7 @@ Because cloud accounts are required, use:
 
 Core tables defined through [supabase/migrations/](supabase/migrations/): `profiles`, `workspaces`, `people`, `relationships`, `events`, `event_participants`, `artifacts`, `claims`, `hypotheses`, `goals`, `advice_sessions`, `messages`, `predictions`, `prediction_branches`, `actual_outcomes`, `source_chunks`, `scenario_cards`, `motto_cards`, `industry_profiles`, `macro_sources`, `macro_signals`, `macro_reports`, `office_layouts`, `office_objects`, `consents`, and `audit_events`. Relationships are directional; events are append-only with linked corrections; claims have `reported/corroborated/disputed/unknown` status and provenance.
 
-Apply RLS to every user table. Implement complete account export/deletion, retention jobs for raw artifacts, deletion of derived OCR/transcripts/embeddings, minimal content-free operational logs, and no advertising SDKs.
+Apply RLS to every user table. Implement complete account export/deletion, retention jobs for raw artifacts, deletion of derived OCR/transcripts/embeddings, and minimal content-free operational logs. Advertising SDKs load only inside the arcade contest module, never on case files, OCR, or advice screens.
 
 ## OCR and voice
 
@@ -186,15 +222,17 @@ Explain these plainly during onboarding and keep a shorter version near advice:
 3. AI gateway and prediction engine: provider abstraction, structured prompts, counterfactual branch simulation, token budgeting, safety routing, telemetry, and cost controls.
 4. Input tools: on-device OCR and short dictation with permissions, preview, correction, and retention controls.
 5. Advice and roleplay: reply comparison, predicted response branches, scripts, citations/provenance, outcome feedback, and multilingual QA.
-6. Office map: editable 2D floor plan, persisted geometry, character selection, accessibility alternative, and performance tests.
-7. Knowledge and motto corpus: run the permitted-source ingestion pipeline, verify summaries, complete editorial review, and ship the initial referenced cards.
-8. Macro intelligence: industry profiles, scheduled source discovery, signal extraction, cited weekly reports, relevance/expiry, and prediction integration.
-9. Evaluation: anonymized synthetic cases and expert scoring for branch plausibility, calibration, factual grounding, action safety, cultural sensitivity, and escalation accuracy; compare predictions against user-recorded outcomes without training on them unless separately consented.
-10. Production readiness: security/privacy/legal review, provider contracts, abuse and load tests, store disclosures, observability, backups, disaster recovery, and staged beta.
+6. Office map: editable 2D floor plan, persisted geometry, character selection, cartoon face lab, accessibility alternative, and performance tests.
+7. Arcade contests: fictional floor, joystick, Slap Desk, Credit Chase, Rumour Flip, 5pm Ghost, rewarded-ad continues, and contest pass grants.
+8. Knowledge and motto corpus: run the permitted-source ingestion pipeline, verify summaries, complete editorial review, and ship the initial referenced cards.
+9. Macro intelligence: industry profiles, scheduled source discovery, signal extraction, cited weekly reports, relevance/expiry, and prediction integration.
+10. Evaluation: anonymized synthetic cases and expert scoring for branch plausibility, calibration, factual grounding, action safety, cultural sensitivity, and escalation accuracy; compare predictions against user-recorded outcomes without training on them unless separately consented.
+11. Production readiness: security/privacy/legal review, provider contracts, abuse and load tests, store disclosures, observability, backups, disaster recovery, and staged beta.
 
 ## Acceptance criteria for MVP
 
-- Users can create an account, set one of three languages, create/edit/delete/export a workspace, people, directional relationships, events, and an office layout.
+- Users can create an account, set one of three languages, create/edit/delete/export a workspace, people, cartoon face-lab avatars, directional relationships, events, and an office layout.
+- Arcade contests run on a fictional floor with joystick movement: Slap Desk, Credit Chase (score = reclaimed credits), Rumour Flip (score = cartoon fights after an honest-speech flick), and 5pm Ghost (dodge vision cones and exit). Coaching flows never treat those actions as recommended workplace moves.
 - OCR and 55-second segmented dictation work without sending raw media to the AI provider; users review and correct extracted text first.
 - The reply simulator compares at least two user options, returns two to four conditional colleague-response branches per option, explains evidence/assumptions, ranks defensive choices against user goals, and records actual outcomes.
 - Advice references only selected/retrieved records and current cited macro signals, distinguishes facts from interpretations, includes uncertainty, and never exceeds configured token/cost limits.

@@ -1,0 +1,67 @@
+{
+  "@@locale": "en",
+  "appTitle": "Office Politics",
+  "appTagline": "Predict the next move. Walk the floor.",
+  "language": "Language",
+  "languageEnglish": "EN",
+  "languageSimplifiedChinese": "简体",
+  "languageTraditionalChinese": "繁體",
+  "arcadeTitle": "Arcade",
+  "arcadeBody": "Landscape floor games: Slap Desk, Credit Chase, Rumour Flip, 5pm Ghost.",
+  "coachTitle": "Coach",
+  "coachBody": "Private advice, reply simulator, and roleplay.",
+  "mapTitle": "Office map",
+  "mapBody": "Place desks and colleagues. Built in a later step.",
+  "comingNext": "Coming next",
+  "landscapeOnly": "This app is landscape only.",
+  "authSubtitle": "An account is required. Coaching data stays private to you.",
+  "sensitiveWarning": "Do not upload confidential or sensitive material. Use fake names for colleagues.",
+  "email": "Email",
+  "password": "Password",
+  "signIn": "Sign in",
+  "createAccount": "Create account",
+  "haveAccount": "Already have an account? Sign in",
+  "needAccount": "New here? Create an account",
+  "account": "Account",
+  "signOut": "Sign out",
+  "exportAccount": "Export my data",
+  "deleteAccount": "Delete account",
+  "deleteAccountConfirm": "This permanently deletes your account on this device, and in the cloud when Supabase is connected.",
+  "deleteAccountAction": "Delete permanently",
+  "cancel": "Cancel",
+  "planFree": "Free",
+  "planPremium": "Premium",
+  "planContest": "Contest pass",
+  "planExpires": "Access until {date}",
+  "@planExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumUntilForever": "Active subscription",
+  "paywallTitle": "Coach is a subscription",
+  "paywallBody": "Arcade contests stay free. Subscribe to use Coach, or win a daily, weekly, or monthly contest for a time-limited pass. If you would rather spend time than money, rewarded ads will give you a fair shot in those contests.",
+  "subscribe": "Subscribe",
+  "subscribeHint": "Store billing comes later. This grants a 30-day premium pass so the rest of the app can be built against a real access flag.",
+  "contestCta": "Back to arcade",
+  "exported": "Account export copied",
+  "invalidCredentials": "Email or password is wrong.",
+  "emailTaken": "That email already has an account.",
+  "weakPassword": "Use at least 8 characters.",
+  "invalidEmail": "Enter a valid email.",
+  "confirmEmail": "Check your email to confirm this account.",
+  "genericError": "Something went wrong. Try again.",
+  "coachLocked": "Subscription required",
+  "accountEmail": "Signed in as {email}",
+  "@accountEmail": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "localAccountNote": "Demo account stored on this device. Connect Supabase to use a cloud account.",
+  "cloudAccountNote": "Cloud account. Export and delete apply to your server records."
+}
