@@ -32,12 +32,31 @@ Each scenario card will contain: pattern, actors, timeline, observable signals, 
 
 Initial coverage:
 - Credit theft, information hoarding, exclusion, gossip, scapegoating, favoritism, coalition building, passive aggression, manager manipulation, promotion/reorg rivalry, performance reviews, hybrid-work proximity bias, layoffs, whistleblowing/retaliation, harassment/discrimination boundaries, and cross-cultural misunderstandings.
+- Mandatory taxonomy coverage: coworker backstabbing, cronyism, interdepartmental/inter-team rivalry (the general-workplace equivalent of interservice rivalry), gaming the system, nepotism, one-upmanship, psychological manipulation, workplace bullying, and workplace democracy.
 - Documented cases such as [Susan Fowler’s Uber account](https://www.susanjfowler.com/blog/2017/2/19/reflecting-on-one-very-strange-year-at-uber), the [Uber Holder report](https://s3.documentcloud.org/documents/3863782/The-Holder-Report-on-Uber.pdf), the [Trip.com hybrid-work randomized trial](https://www.nature.com/articles/s41586-024-07500-2), and regulator guidance from [EEOC](https://www.eeoc.gov/harassment), [Acas](https://www.acas.org.uk/bullying-at-work), and [OSHA](https://www.whistleblowers.gov/faq).
 - Evidence anchors including the [organizational-politics meta-analysis](https://doi.org/10.5465/amj.2009.43670894), [psychological-safety research](https://www.hbs.edu/faculty/Pages/item.aspx?num=2959&t=research), and [NIST’s generative-AI risk profile](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf).
 - Anecdotal sources such as Ask a Manager and Workplace Stack Exchange only for scenario diversity; label them unverified and never treat popularity as proof.
 - Talks from [Amy Edmondson](https://www.youtube.com/watch?v=LhoLuui9gX8), [Margaret Heffernan](https://www.youtube.com/watch?v=PY_kd46RfVE), and [Jeffrey Pfeffer](https://www.youtube.com/watch?v=AozJ4AkgAMw) as practitioner material, clearly separated from peer-reviewed evidence.
 
 Maintain the ingestion policy and source manifest under [knowledge/README.md](knowledge/README.md), source metadata under [knowledge/sources/](knowledge/sources/), reviewable scenario records under [knowledge/scenarios/](knowledge/scenarios/), and ingestion/evaluation jobs under [tools/knowledge_pipeline/](tools/knowledge_pipeline/). Publish only structured summaries and permitted short quotations, not copied articles or transcripts.
+
+### Mandatory workplace-politics pattern taxonomy
+
+The app, scenario library, event journal, relationship summaries, advice engine, reply simulator, and roleplay evaluation must recognize the following patterns. A record may have multiple pattern hypotheses, and the user may accept, reject, or edit every suggested tag.
+
+- **Coworker backstabbing:** concealed betrayal such as taking credit, withholding decisive information, privately undermining work, reversing support, or shifting blame. Separate a documented action from assumptions about intent.
+- **Cronyism:** preferential access, assignments, protection, or promotion based on friendship or loyalty rather than relevant merit. Compare decisions against stated criteria and consistent treatment.
+- **Interdepartmental or inter-team rivalry:** teams optimizing status, budget, headcount, ownership, or executive attention against one another. This adapts the military/government term *interservice rivalry* to ordinary workplaces and must also consider legitimate goal or incentive conflicts.
+- **Gaming the system:** exploiting metrics, procedures, incentives, loopholes, or information asymmetry while technically appearing compliant. Record the rule, observed behavior, benefit, affected party, and process evidence.
+- **Nepotism:** preferential treatment based specifically on family or kinship. Keep it distinct from friendship-based cronyism and do not infer a relationship without evidence.
+- **One-upmanship:** status competition intended to outshine, top, intimidate, or make another person feel inferior. It can be isolated or recurring; distinguish harmful status maneuvering from playful competition, ordinary disagreement, or strong performance.
+- **Psychological manipulation:** tactics such as gaslighting-like denial, coercive guilt, triangulation, baiting, false urgency, selective disclosure, or reality distortion. Describe behavior and evidence; never diagnose a person or claim mind-reading.
+- **Workplace bullying:** repeated intimidation, humiliation, exclusion, threats, sabotage, or abuse of power. Advice must prioritize documentation, immediate safety, trusted support, formal policy, union or professional help, and jurisdiction-aware escalation—not retaliation.
+- **Workplace democracy:** employee participation, voice, consultation, representation, transparent decision-making, and shared governance. This is a protective organizational pattern rather than misconduct; the app should evaluate whether it reduces concentrated power and creates safe channels for disagreement.
+
+For each pattern, the app must show: observed facts, user interpretation, missing information, alternative explanations, recurrence, impact, power imbalance, confidence, supporting and conflicting evidence, low-risk defensive options, escalation thresholds, and later actual outcomes. Pattern names describe situations, not permanent personality traits.
+
+The initial reviewed corpus must include at least eight scenario cards materially addressing each mandatory pattern; cards may cover multiple patterns. Include both clear examples and ambiguous counterexamples so retrieval does not teach the consultant to over-classify normal conflict as politics.
 
 ## Referenced motto library
 
@@ -63,13 +82,13 @@ Differentiate by combining:
 
 ## MVP experience
 
-1. Onboarding: choose English, Simplified Chinese, or Traditional Chinese; show the one-time sensitive-data warning and explain AI limitations; create an account; choose retention settings. Before the first third-party AI transmission, explicitly name the provider, explain what data will be sent and why, collect revocable consent, and then remember that choice.
-2. Workspace setup: define the user’s role, organization context, goals, constraints, reporting structure, and preferred pseudonyms.
-3. Character setup: collect display name/pseudonym, role/title, team, seniority, reporting line, decision authority, resource control, communication style, incentives/goals as perceived by the user, known constraints, trust history, interaction frequency, and neutral free-text notes. Include a parametric cartoon **face lab** (head, hair, brows, eyes, mouth, office accessories, signature expression) so the colleague can appear on the private map and in arcade games. Do not store a “hated” flag on the profile. The AI returns a concise editable summary and marks interpretations as user-reported.
+1. Onboarding: choose English, Simplified Chinese, or Traditional Chinese; show the one-time sensitive-data warning and explain AI limitations; choose a display name of no more than 15 characters; then continue as a visitor or authenticate through Supabase Auth with email, Google, or Apple; choose retention settings. Before the first third-party AI transmission, explicitly name the provider, explain what data will be sent and why, collect revocable consent, and then remember that choice.
+2. Workspace setup: after an introduction, use four sequential views: **Workplace** (industry, department, location, culture, structure, current situation, and anything else the user considers important), **Yourself** (role with responsibilities, sex, exact or approximate age, tenure, goals, and other important context), **First Colleague** (pseudonym, role with responsibilities, sex, exact or approximate age, observed style, and other person-specific information), then **Relationship With You** (how the pair works together, major shared events, current dynamic, a five-level relationship score, and other pair-specific information). Keep the colleague profile separate from the pair relationship.
+3. Character setup: both Create Colleague and Modify Persona use one two-stage editor: colleague details followed by the colleague’s relationship with the user. A dedicated Relationship Editor creates or modifies either a user-colleague pair or a colleague-colleague pair while showing both avatars and personas. Include a parametric cartoon **face lab** (head, hair, brows, eyes, mouth, office accessories, signature expression) so the colleague can appear on the private map and in arcade games. First launch edits self and the first colleague; later flows edit only self, modify one existing colleague, or create one new colleague. A full Character Profile view shows the selected person’s avatar, persona, all recorded setup information, and events added during use; non-self profiles can open relationship editing. Do not store a “hated” flag on the profile. The AI returns a concise editable summary and marks interpretations as user-reported.
 4. Relationship setup: directional relationship for each relevant pair—not every mathematical pair by default—with work dependency, authority, influence channel, cooperation/conflict history, communication frequency, trust level, recent trend, key evidence, and user uncertainty. Avoid fixed “enemy/loyalty” scores.
-5. Event journal: date/time, participants, location/channel, exact words/actions, business context, impact, witnesses, commitments, linked artifacts, user response, follow-up, and status. Preserve source and revisions separately from AI summaries.
-6. Ask for advice: typed text, selected people/events, OCR import, or dictation. Return neutral restatement, observations, unknowns, alternative hypotheses, evidence for/against, likely next moves as scenarios, low-risk options, scripts, escalation considerations, and confidence rationale.
-7. Office map: drag desks, partitions, doors, meeting rooms, labels, and character seats on a zoomable 2D canvas; tap a character to open their profile/timeline; optionally visualize selected relationships without turning the office into an “enemy board.”
+5. Event journal: a dedicated Home category provides a chronological timeline plus one combined inspect/create editor. Capture date/time, participants, detailed observable story, personal feelings, location/channel, business context, witnesses, commitments, linked artifacts, user response, follow-up, and status. Free text can be analyzed into editable suggested values. Display separate adjustable estimates for political impact, personal stress, urgency, and evidence confidence; these are estimates with inspectable meaning, not facts. Preserve source and revisions separately from consultant summaries. Allow optional user-selected pattern tags and consultant-suggested pattern hypotheses from the mandatory taxonomy, each with evidence, confidence, alternatives, and accept/reject/edit controls.
+6. Ask for advice: typed text, selected people/events, OCR import, or dictation. Return neutral restatement, observations, unknowns, alternative hypotheses, evidence for/against, applicable mandatory-taxonomy patterns, likely next moves as scenarios, low-risk options, scripts, escalation considerations, and confidence rationale.
+7. Office map: Home shows a read-only isometric tactical overview with moving, tappable colleagues. Tapping a colleague opens a quick persona summary covering role, relationship with the user, major linked events, evidence count, and confidence, with a button to open the full character panel. The separate isometric editor uses the same camera and visual language and lets the user drag desks, chairs, shaped walls, partitions, doors, meeting rooms, labels, and character seats onto the floor. Do not draw inferred relationship lines automatically or turn the office into an “enemy board.”
 8. Roleplay: select a person, goal, tone, and difficulty; practice a conversation; receive feedback on clarity, evidence, boundary-setting, and escalation risk.
 9. Reply simulator: paste or OCR an incoming email, draft multiple replies, compare predicted colleague responses and harm/risk branches, choose one, and later record the real outcome.
 10. Business outlook: define the employer’s industry, countries, business lines, competitors, and exposure factors; receive cited macro trend summaries and see which assumptions were used in advice.
@@ -77,6 +96,35 @@ Differentiate by combining:
 12. Arcade contests: joystick movement on a fictional office floor; play Slap Desk plus Credit Chase, Rumour Flip, and 5pm Ghost; optional rewarded-ad continues; daily/weekly/monthly skill contests that can grant a time-limited premium pass.
 
 Defer employer dashboards, coworker recording, passive monitoring, automatic email-account ingestion, cross-user social graphs, and organization-wide analytics.
+
+## Evidence-based politics indicators
+
+Politics intensity and relationship risk are decision-support indices, not objective facts, diagnoses, or probabilities that someone has malicious intent. Always display the score with its evidence count, time window, confidence, and the user-reported inputs that materially affected it. A user can inspect and correct every input.
+
+Normalize each recorded event factor to 0–1:
+- `I`: documented impact on the user’s work, reputation, resources, or wellbeing.
+- `P`: relevant power or resource imbalance.
+- `R`: recurrence of the same observable pattern.
+- `Q`: observable process irregularity, such as bypassed approval, changed attribution, or inconsistent instructions. Do not score inferred motive.
+- `U`: unresolved commitments or continuing exposure.
+
+Event pressure score:
+
+`S_event = 100 × (0.30I + 0.20P + 0.20R + 0.15Q + 0.15U)`
+
+Apply recency weight `w = exp(-days_since_event / 60)`. Let `mean_w` be the recency-weighted mean event score, `max_90` the maximum score in the last 90 days, and `trend` the bounded change between the last 30 days and the preceding 60 days in the range −1 to +1:
+
+`Politics intensity = clamp((0.70 × mean_w + 0.30 × max_90) × (1 + 0.15 × trend), 0, 100)`
+
+Relationship risk for one colleague uses only linked events and current dependencies:
+
+`Relationship risk = clamp(0.55 × linked_event_intensity + 20 × unresolved_ratio + 15 × power_imbalance + 10 × dependency, 0, 100)`
+
+Compute confidence separately:
+
+`Confidence = 100 × (0.30 × field_completeness + 0.30 × evidence_quality + 0.20 × min(event_count / 8, 1) + 0.20 × source_diversity)`
+
+Evidence quality considers whether the record contains exact wording, dates, artifacts, witnesses, or confirmed outcomes. Source diversity reflects independent channels or corroboration, not repeated retelling. Low confidence does not mean low risk; it means the estimate is uncertain. For fewer than three events, suppress trend and label the result “early estimate.” Suggested display bands are 0–24 low, 25–49 watch, 50–74 elevated, and 75–100 acute, but the underlying number and evidence must remain inspectable.
 
 ## Arcade contests and hyperactive mini-games
 
@@ -123,7 +171,7 @@ Because cloud accounts are required, use:
 - UUIDs, version columns, tombstones, idempotent writes, and explicit conflict handling.
 - Keychain/Keystore via `flutter_secure_storage`; TLS in transit; short-lived signed artifact URLs; tenant-scoped object paths.
 
-Core tables defined through [supabase/migrations/](supabase/migrations/): `profiles`, `workspaces`, `people`, `relationships`, `events`, `event_participants`, `artifacts`, `claims`, `hypotheses`, `goals`, `advice_sessions`, `messages`, `predictions`, `prediction_branches`, `actual_outcomes`, `source_chunks`, `scenario_cards`, `motto_cards`, `industry_profiles`, `macro_sources`, `macro_signals`, `macro_reports`, `office_layouts`, `office_objects`, `consents`, and `audit_events`. Relationships are directional; events are append-only with linked corrections; claims have `reported/corroborated/disputed/unknown` status and provenance.
+Core tables defined through [supabase/migrations/](supabase/migrations/): `profiles`, `workspaces`, `people`, `relationships`, `events`, `event_participants`, `artifacts`, `claims`, `hypotheses`, `goals`, `advice_sessions`, `messages`, `predictions`, `prediction_branches`, `actual_outcomes`, `politics_patterns`, `event_pattern_assessments`, `scenario_pattern_links`, `source_chunks`, `scenario_cards`, `motto_cards`, `industry_profiles`, `macro_sources`, `macro_signals`, `macro_reports`, `office_layouts`, `office_objects`, `consents`, and `audit_events`. Relationships are directional; events are append-only with linked corrections; claims have `reported/corroborated/disputed/unknown` status and provenance. Pattern assessments store `suggested/accepted/rejected` state, confidence, evidence links, counter-evidence, alternative explanations, assessor type, and model/prompt version; they never store a pattern as an intrinsic character trait.
 
 Apply RLS to every user table. Implement complete account export/deletion, retention jobs for raw artifacts, deletion of derived OCR/transcripts/embeddings, and minimal content-free operational logs. Advertising SDKs load only inside the arcade contest module, never on case files, OCR, or advice screens.
 

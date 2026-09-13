@@ -6,6 +6,28 @@ import '../../features/account/application/session_controller.dart';
 import '../../features/account/presentation/account_screen.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
+import '../../features/engineering/domain/design_screen_definition.dart';
+import '../../features/engineering/presentation/arcade_design_screen.dart';
+import '../../features/engineering/presentation/arcade_game_design_screen.dart';
+import '../../features/engineering/presentation/auth_design_screen.dart';
+import '../../features/engineering/presentation/character_editor_design_screen.dart';
+import '../../features/engineering/presentation/character_profile_design_screen.dart';
+import '../../features/engineering/presentation/design_preview_design_screen.dart';
+import '../../features/engineering/presentation/engineering_screen.dart';
+import '../../features/engineering/presentation/event_editor_design_screen.dart';
+import '../../features/engineering/presentation/event_timeline_design_screen.dart';
+import '../../features/engineering/presentation/face_lab_design_screen.dart';
+import '../../features/engineering/presentation/home_design_screen.dart';
+import '../../features/engineering/presentation/language_setup_design_screen.dart';
+import '../../features/engineering/presentation/leaderboard_design_screen.dart';
+import '../../features/engineering/presentation/name_setup_design_screen.dart';
+import '../../features/engineering/presentation/office_map_editor_design_screen.dart';
+import '../../features/engineering/presentation/people_network_design_screen.dart';
+import '../../features/engineering/presentation/privacy_notice_design_screen.dart';
+import '../../features/engineering/presentation/relationship_editor_design_screen.dart';
+import '../../features/engineering/presentation/screen_map_design_screen.dart';
+import '../../features/engineering/presentation/splash_design_screen.dart';
+import '../../features/engineering/presentation/workspace_setup_design_screen.dart';
 import '../../features/paywall/presentation/paywall_screen.dart';
 import '../../features/shell/presentation/shell_screen.dart';
 
@@ -15,11 +37,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/engineering',
     refreshListenable: refresh,
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final location = state.matchedLocation;
+      final atEngineering =
+          location == '/engineering' || location.startsWith('/design/');
+      if (atEngineering) {
+        return null;
+      }
       final atSplash = location == '/splash';
       final atAuth = location == '/auth';
 
@@ -37,6 +64,122 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/engineering',
+        name: 'engineering',
+        builder: (context, state) => const EngineeringScreen(),
+      ),
+      GoRoute(
+        path: '/design/:designScreenId',
+        name: 'designPreviewDesignScreen',
+        builder: (context, state) {
+          final designScreenId = state.pathParameters['designScreenId'] ?? '';
+          if (designScreenId == 'splash') {
+            return const SplashDesignScreen();
+          }
+          if (designScreenId == 'home') {
+            return const HomeDesignScreen();
+          }
+          if (designScreenId == 'language-setup') {
+            return const LanguageSetupDesignScreen();
+          }
+          if (designScreenId == 'name-setup') {
+            return const NameSetupDesignScreen();
+          }
+          if (designScreenId == 'privacy-notice') {
+            return const PrivacyNoticeDesignScreen();
+          }
+          if (designScreenId == 'auth') {
+            return const AuthDesignScreen();
+          }
+          if (designScreenId == 'workspace-setup') {
+            return const WorkspaceSetupDesignScreen();
+          }
+          if (designScreenId == 'face-lab') {
+            final mode = state.uri.queryParameters['mode'];
+            return FaceLabDesignScreen(
+              firstLaunch: mode == 'first-launch',
+              creatingColleague: mode == 'colleague-create',
+              colleagueName: state.uri.queryParameters['name'] ?? 'Alex',
+            );
+          }
+          if (designScreenId == 'office-map-editor') {
+            return const OfficeMapEditorDesignScreen();
+          }
+          if (designScreenId == 'people-network') {
+            return const PeopleNetworkDesignScreen();
+          }
+          if (designScreenId == 'character-editor') {
+            return CharacterEditorDesignScreen(
+              creating: state.uri.queryParameters['mode'] == 'create',
+              initialRelationshipStep:
+                  state.uri.queryParameters['step'] == 'relationship',
+            );
+          }
+          if (designScreenId == 'character-profile') {
+            return CharacterProfileDesignScreen(
+              initialPerson: state.uri.queryParameters['person'] ?? 'You',
+            );
+          }
+          if (designScreenId == 'relationship-editor') {
+            final requestedCase = state.uri.queryParameters['case'];
+            final mode = switch (requestedCase) {
+              'create-self-other' =>
+                RelationshipEditorModeDesignScreen.createSelfColleague,
+              'create-colleagues' =>
+                RelationshipEditorModeDesignScreen.createColleaguePair,
+              'modify-colleagues' =>
+                RelationshipEditorModeDesignScreen.modifyColleaguePair,
+              _ => RelationshipEditorModeDesignScreen.modifySelfColleague,
+            };
+            return RelationshipEditorDesignScreen(initialMode: mode);
+          }
+          if (designScreenId == 'event-timeline') {
+            return const EventTimelineDesignScreen();
+          }
+          if (designScreenId == 'event-editor') {
+            return EventEditorDesignScreen(
+              initialMode: state.uri.queryParameters['mode'] == 'create'
+                  ? EventEditorModeDesignScreen.create
+                  : EventEditorModeDesignScreen.inspect,
+            );
+          }
+          if (designScreenId == 'screen-map') {
+            return const ScreenMapDesignScreen();
+          }
+          if (designScreenId == 'arcade') {
+            return const ArcadeDesignScreen();
+          }
+          if (designScreenId == 'slap-desk') {
+            return const ArcadeGameDesignScreen(
+              game: ArcadeGameDesignType.slapDesk,
+            );
+          }
+          if (designScreenId == 'credit-chase') {
+            return const ArcadeGameDesignScreen(
+              game: ArcadeGameDesignType.creditChase,
+            );
+          }
+          if (designScreenId == 'rumour-flip') {
+            return const ArcadeGameDesignScreen(
+              game: ArcadeGameDesignType.rumourFlip,
+            );
+          }
+          if (designScreenId == 'five-pm-ghost') {
+            return const ArcadeGameDesignScreen(
+              game: ArcadeGameDesignType.fivePmGhost,
+            );
+          }
+          if (designScreenId == 'leaderboard') {
+            return const LeaderboardDesignScreen();
+          }
+          final definition = designScreenDefinitionById(designScreenId);
+          if (definition == null) {
+            return const EngineeringScreen();
+          }
+          return DesignPreviewDesignScreen(definition: definition);
+        },
+      ),
       GoRoute(
         path: '/splash',
         name: 'splash',

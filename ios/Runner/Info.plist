@@ -30,6 +30,10 @@
 		<string>zh-Hans</string>
 		<string>zh-Hant</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Office Politics uses the microphone when you choose to dictate workplace context.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Office Politics converts your spoken workplace description into editable text.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

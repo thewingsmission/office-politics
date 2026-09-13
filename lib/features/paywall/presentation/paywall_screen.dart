@@ -117,7 +117,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           const SizedBox(height: AppSpacing.lg),
                           AppButton(
                             label: l10n.contestCta,
-                            primary: false,
                             onPressed: () => context.go('/'),
                           ),
                         ],

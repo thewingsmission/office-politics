@@ -34,7 +34,7 @@ Future<AccountRepository> _createRepository() async {
   if (AppConfig.useSupabase) {
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
-      publishableKey: AppConfig.supabaseAnonKey,
+      publishableKey: AppConfig.supabasePublishableKey,
     );
     return SupabaseAccountRepository(Supabase.instance.client);
   }

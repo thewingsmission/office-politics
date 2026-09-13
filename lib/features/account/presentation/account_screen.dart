@@ -40,9 +40,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     if (!profile.hasPremiumAccess) return l10n.planFree;
     if (until == null) return l10n.premiumUntilForever;
     return l10n.planExpires(
-      DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(
-        until.toLocal(),
-      ),
+      DateFormat.yMMMd(
+        Localizations.localeOf(context).toString(),
+      ).format(until.toLocal()),
     );
   }
 
@@ -162,7 +162,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         children: [
                           AppButton(
                             label: l10n.exportAccount,
-                            primary: false,
                             onPressed: _export,
                           ),
                           if (_exported) ...[
@@ -184,9 +183,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                           ],
                           AppButton(
                             label: l10n.signOut,
-                            primary: false,
                             onPressed: () async {
-                              await ref.read(sessionProvider.notifier).signOut();
+                              await ref
+                                  .read(sessionProvider.notifier)
+                                  .signOut();
                               if (context.mounted) context.go('/auth');
                             },
                           ),
@@ -205,7 +205,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                 Expanded(
                                   child: AppButton(
                                     label: l10n.cancel,
-                                    primary: false,
                                     onPressed: () =>
                                         setState(() => _confirmDelete = false),
                                   ),
