@@ -9,9 +9,10 @@ import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/engineering/domain/design_screen_definition.dart';
 import '../../features/engineering/presentation/arcade_design_screen.dart';
 import '../../features/engineering/presentation/arcade_game_design_screen.dart';
+import '../../features/engineering/presentation/advice_input_design_screen.dart';
 import '../../features/engineering/presentation/auth_design_screen.dart';
-import '../../features/engineering/presentation/character_editor_design_screen.dart';
 import '../../features/engineering/presentation/character_profile_design_screen.dart';
+import '../../features/engineering/presentation/colleague_design_screen.dart';
 import '../../features/engineering/presentation/design_preview_design_screen.dart';
 import '../../features/engineering/presentation/engineering_screen.dart';
 import '../../features/engineering/presentation/event_editor_design_screen.dart';
@@ -24,10 +25,12 @@ import '../../features/engineering/presentation/name_setup_design_screen.dart';
 import '../../features/engineering/presentation/office_map_editor_design_screen.dart';
 import '../../features/engineering/presentation/people_network_design_screen.dart';
 import '../../features/engineering/presentation/privacy_notice_design_screen.dart';
-import '../../features/engineering/presentation/relationship_editor_design_screen.dart';
+import '../../features/engineering/presentation/relationship_setup_design_screen.dart';
 import '../../features/engineering/presentation/screen_map_design_screen.dart';
 import '../../features/engineering/presentation/splash_design_screen.dart';
 import '../../features/engineering/presentation/workspace_setup_design_screen.dart';
+import '../../features/engineering/presentation/workplace_design_screen.dart';
+import '../../features/engineering/presentation/yourself_design_screen.dart';
 import '../../features/paywall/presentation/paywall_screen.dart';
 import '../../features/shell/presentation/shell_screen.dart';
 
@@ -95,6 +98,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           if (designScreenId == 'workspace-setup') {
             return const WorkspaceSetupDesignScreen();
           }
+          final workspaceScenario = switch (state.uri.queryParameters['mode']) {
+            'create' => WorkspaceScenarioDesignScreen.create,
+            'modify' => WorkspaceScenarioDesignScreen.modify,
+            'create-pair' => WorkspaceScenarioDesignScreen.createPair,
+            'modify-pair' => WorkspaceScenarioDesignScreen.modifyPair,
+            _ => WorkspaceScenarioDesignScreen.firstLaunch,
+          };
+          if (designScreenId == 'workplace') {
+            return WorkplaceDesignScreen(initialScenario: workspaceScenario);
+          }
+          if (designScreenId == 'yourself') {
+            return YourselfDesignScreen(initialScenario: workspaceScenario);
+          }
+          if (designScreenId == 'colleague') {
+            return ColleagueDesignScreen(initialScenario: workspaceScenario);
+          }
+          if (designScreenId == 'relationship-setup') {
+            return RelationshipSetupDesignScreen(
+              initialScenario: workspaceScenario,
+            );
+          }
           if (designScreenId == 'face-lab') {
             final mode = state.uri.queryParameters['mode'];
             return FaceLabDesignScreen(
@@ -109,30 +133,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           if (designScreenId == 'people-network') {
             return const PeopleNetworkDesignScreen();
           }
-          if (designScreenId == 'character-editor') {
-            return CharacterEditorDesignScreen(
-              creating: state.uri.queryParameters['mode'] == 'create',
-              initialRelationshipStep:
-                  state.uri.queryParameters['step'] == 'relationship',
-            );
-          }
           if (designScreenId == 'character-profile') {
             return CharacterProfileDesignScreen(
               initialPerson: state.uri.queryParameters['person'] ?? 'You',
             );
-          }
-          if (designScreenId == 'relationship-editor') {
-            final requestedCase = state.uri.queryParameters['case'];
-            final mode = switch (requestedCase) {
-              'create-self-other' =>
-                RelationshipEditorModeDesignScreen.createSelfColleague,
-              'create-colleagues' =>
-                RelationshipEditorModeDesignScreen.createColleaguePair,
-              'modify-colleagues' =>
-                RelationshipEditorModeDesignScreen.modifyColleaguePair,
-              _ => RelationshipEditorModeDesignScreen.modifySelfColleague,
-            };
-            return RelationshipEditorDesignScreen(initialMode: mode);
           }
           if (designScreenId == 'event-timeline') {
             return const EventTimelineDesignScreen();
@@ -143,6 +147,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ? EventEditorModeDesignScreen.create
                   : EventEditorModeDesignScreen.inspect,
             );
+          }
+          if (designScreenId == 'advice-input') {
+            return const AdviceInputDesignScreen();
           }
           if (designScreenId == 'screen-map') {
             return const ScreenMapDesignScreen();

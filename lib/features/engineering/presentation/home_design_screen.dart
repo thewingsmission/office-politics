@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/app_button.dart';
 import 'design_avatar.dart';
 import 'design_back_button.dart';
+import 'people_network_design_screen.dart';
 
 class HomeDesignScreen extends StatefulWidget {
   const HomeDesignScreen({super.key});
@@ -108,13 +109,11 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: person.color.withValues(alpha: 0.18),
-                      child: Icon(
-                        Icons.person_rounded,
-                        color: person.color,
-                        size: 34,
+                    SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: CustomPaint(
+                        painter: DesignAvatarPainter(person.avatar),
                       ),
                     ),
                     const SizedBox(width: 11),
@@ -272,7 +271,6 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
                       builder: (context, _) => _IsometricOffice(
                         motion: officeMotionDesignScreen.value,
                         userPosition: userPositionDesignScreen,
-                        selectedPerson: selectedPersonDesignScreen,
                         onPersonSelected: showPersonaDesignScreen,
                       ),
                     ),
@@ -333,27 +331,9 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
                       ),
                     ),
                   ),
-                  if (!isCompact)
-                    Positioned(
-                      left: size.width * 0.36,
-                      right: size.width * 0.31,
-                      bottom: 57,
-                      height: 68,
-                      child: AnimatedBuilder(
-                        animation: panelAnimationDesignScreen,
-                        builder: (context, child) => Transform.translate(
-                          offset: Offset(
-                            0,
-                            95 * panelAnimationDesignScreen.value,
-                          ),
-                          child: child,
-                        ),
-                        child: const _ArcadeLauncher(),
-                      ),
-                    ),
                   Positioned(
-                    left: isCompact ? 70 : size.width * 0.23,
-                    right: isCompact ? 70 : size.width * 0.23,
+                    left: 12,
+                    right: 12,
                     bottom: 0,
                     height: 48,
                     child: AnimatedBuilder(
@@ -749,7 +729,7 @@ class _RelationshipPanel extends StatelessWidget {
   const _RelationshipPanel({required this.compact, required this.person});
 
   final bool compact;
-  final _PersonData person;
+  final NetworkPersonDesignScreen person;
 
   @override
   Widget build(BuildContext context) {
@@ -761,15 +741,10 @@ class _RelationshipPanel extends StatelessWidget {
             label: 'PERSONA & RELATIONSHIP',
           ),
           const SizedBox(height: 8),
-          Container(
+          SizedBox(
             width: compact ? 42 : 50,
             height: compact ? 42 : 50,
-            decoration: BoxDecoration(
-              color: person.color.withValues(alpha: 0.28),
-              shape: BoxShape.circle,
-              border: Border.all(color: person.color, width: 2),
-            ),
-            child: Icon(Icons.person_rounded, color: person.color, size: 34),
+            child: CustomPaint(painter: DesignAvatarPainter(person.avatar)),
           ),
           const SizedBox(height: 5),
           Text(
@@ -874,45 +849,6 @@ class _Meter extends StatelessWidget {
   }
 }
 
-class _ArcadeLauncher extends StatelessWidget {
-  const _ArcadeLauncher();
-
-  @override
-  Widget build(BuildContext context) {
-    return _TacticalPanel(
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('ARCADE QUICK-LAUNCH', style: _panelLabelStyle),
-                SizedBox(height: 3),
-                Text(
-                  'DAILY CHALLENGE · Slap Desk!',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Color(0xFF67E8E3),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 98,
-            child: AppButton(label: 'PLAY NOW', onPressed: () {}),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _BottomNavigation extends StatefulWidget {
   const _BottomNavigation();
 
@@ -936,12 +872,12 @@ class _BottomNavigationState extends State<_BottomNavigation> {
         'Events',
         () => context.go('/design/event-timeline'),
       ),
+      (Icons.map_rounded, 'Map', () => context.go('/design/office-map-list')),
       (
         Icons.psychology_alt_rounded,
         'Advice',
         () => context.go('/design/advice-input'),
       ),
-      (Icons.map_rounded, 'Map', () => context.go('/design/office-map-list')),
       (
         Icons.sports_esports_rounded,
         'Arcade',
@@ -952,6 +888,7 @@ class _BottomNavigationState extends State<_BottomNavigation> {
         'Profile',
         () => context.go('/design/account'),
       ),
+      (Icons.more_horiz_rounded, 'More', () {}),
     ];
     return Row(
       children: [
@@ -961,9 +898,13 @@ class _BottomNavigationState extends State<_BottomNavigation> {
             child: AnimatedScale(
               key: ValueKey('home-nav-scale-${entry.$2.$2.toLowerCase()}'),
               scale: pressedIndex == null
-                  ? 1
+                  ? entry.$2.$2 == 'Advice'
+                        ? 1.16
+                        : 1
                   : pressedIndex == entry.$1
-                  ? 1.16
+                  ? entry.$2.$2 == 'Advice'
+                        ? 1.28
+                        : 1.16
                   : 0.84,
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
@@ -1055,13 +996,11 @@ class _IsometricOffice extends StatelessWidget {
   const _IsometricOffice({
     required this.motion,
     required this.userPosition,
-    required this.selectedPerson,
     required this.onPersonSelected,
   });
 
   final double motion;
   final Offset userPosition;
-  final int selectedPerson;
   final ValueChanged<int> onPersonSelected;
 
   Offset _project(Offset point, Size size) {
@@ -1089,229 +1028,56 @@ class _IsometricOffice extends StatelessWidget {
               Positioned(
                 left:
                     _project(entry.$2.position, size).dx -
-                    16 +
+                    35 +
                     math.sin((motion + entry.$2.phase) * math.pi * 2) * 3,
                 top:
                     _project(entry.$2.position, size).dy -
-                    18 +
+                    50 +
                     math.cos((motion + entry.$2.phase) * math.pi * 2) * 2,
-                child: _MapPerson(
-                  name: entry.$2.name,
-                  color: entry.$2.color,
-                  avatar: entry.$2.avatar,
+                child: NetworkMovingPersonDesignScreen(
+                  person: entry.$2,
                   motion: motion,
-                  selected: entry.$1 == selectedPerson,
+                  selected: false,
+                  connectionSelected: false,
+                  headInnerGlowScale: 1.15,
+                  headOuterGlowScale: 1.25,
+                  headOuterGlowOpacity: 0.55,
+                  bodyInnerGlowScale: 1.15,
+                  bodyOuterGlowScale: 1.25,
+                  bodyOuterGlowOpacity: 0.55,
+                  onPressStart: () {},
+                  onPressEnd: () {},
                   onTap: () => onPersonSelected(entry.$1),
+                  onDragStart: (_) {},
+                  onDragUpdate: (_) {},
+                  onDragEnd: (_) {},
                 ),
               ),
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 170),
-              curve: Curves.easeOut,
-              left: userPoint.dx - 18,
-              top: userPoint.dy - 21,
-              child: _MapPerson(
-                name: 'YOU',
-                color: Color(0xFF35DCD4),
-                avatar: DesignAvatarDraft.self,
+            Positioned(
+              left: userPoint.dx - 35,
+              top: userPoint.dy - 50,
+              child: NetworkMovingPersonDesignScreen(
+                person: peopleNetworkPeopleDesignScreen.first,
                 motion: motion,
-                isUser: true,
+                selected: false,
+                connectionSelected: false,
+                headInnerGlowScale: 1.15,
+                headOuterGlowScale: 1.25,
+                headOuterGlowOpacity: 0.55,
+                bodyInnerGlowScale: 1.15,
+                bodyOuterGlowScale: 1.25,
+                bodyOuterGlowOpacity: 0.55,
+                onPressStart: () {},
+                onPressEnd: () {},
+                onTap: () {},
+                onDragStart: (_) {},
+                onDragUpdate: (_) {},
+                onDragEnd: (_) {},
               ),
             ),
           ],
         );
       },
-    );
-  }
-}
-
-class _MapPerson extends StatelessWidget {
-  const _MapPerson({
-    required this.name,
-    required this.color,
-    required this.avatar,
-    required this.motion,
-    this.isUser = false,
-    this.selected = false,
-    this.onTap,
-  });
-
-  final String name;
-  final Color color;
-  final DesignAvatarData avatar;
-  final double motion;
-  final bool isUser;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: AnimatedScale(
-        scale: isUser || selected ? 1.12 : 1,
-        duration: const Duration(milliseconds: 220),
-        child: SizedBox(
-          width: 50,
-          height: 73,
-          child: Column(
-            children: [
-              Container(
-                constraints: const BoxConstraints(maxWidth: 48),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: const Color(0xEFFFFFFF),
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: isUser || selected
-                        ? const Color(0xFF806DE2)
-                        : const Color(0xFF9EDCF5),
-                  ),
-                ),
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF245672),
-                    fontSize: 6,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 1),
-              Expanded(
-                child: _HomeAvatarBody(
-                  avatar: avatar,
-                  color: color,
-                  motion: motion,
-                  highlighted: isUser || selected,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeAvatarBody extends StatelessWidget {
-  const _HomeAvatarBody({
-    required this.avatar,
-    required this.color,
-    required this.motion,
-    required this.highlighted,
-  });
-
-  final DesignAvatarData avatar;
-  final Color color;
-  final double motion;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    final stride = math.sin(motion * math.pi * 8);
-    final idle = math.sin(motion * math.pi * 4);
-    return Transform.translate(
-      offset: Offset(0, idle.abs() * -1.5),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: highlighted
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.28),
-                    blurRadius: 13,
-                    spreadRadius: 3,
-                  ),
-                ]
-              : const [],
-        ),
-        child: Stack(
-          alignment: Alignment.topCenter,
-          children: [
-            Positioned(
-              top: 37,
-              left: 13,
-              child: Transform.rotate(
-                angle: stride * 0.2,
-                alignment: Alignment.topCenter,
-                child: const _HomeLimb(color: Color(0xFF5E79A7), height: 15),
-              ),
-            ),
-            Positioned(
-              top: 37,
-              right: 13,
-              child: Transform.rotate(
-                angle: -stride * 0.2,
-                alignment: Alignment.topCenter,
-                child: const _HomeLimb(color: Color(0xFF5E79A7), height: 15),
-              ),
-            ),
-            Positioned(
-              top: 22,
-              child: Container(
-                width: 27,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: avatar.outfitColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(11),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 25,
-              left: 8,
-              child: Transform.rotate(
-                angle: -stride * 0.2,
-                child: _HomeLimb(color: avatar.skinColor, height: 19),
-              ),
-            ),
-            Positioned(
-              top: 25,
-              right: 8,
-              child: Transform.rotate(
-                angle: stride * 0.2,
-                child: _HomeLimb(color: avatar.skinColor, height: 19),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              child: Transform.rotate(
-                angle: idle * 0.035,
-                child: SizedBox(
-                  key: ValueKey('home-walking-avatar-${avatar.hashCode}'),
-                  width: 34,
-                  height: 38,
-                  child: CustomPaint(painter: DesignAvatarHeadPainter(avatar)),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeLimb extends StatelessWidget {
-  const _HomeLimb({required this.color, required this.height});
-
-  final Color color;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 5,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(4),
-      ),
     );
   }
 }
@@ -1618,145 +1384,9 @@ class _CircuitPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-const officePeopleDesignScreen = <_PersonData>[
-  _PersonData(
-    'Morgan',
-    'Director',
-    'Executive Office',
-    'Status-conscious · Decisive · Guards authority',
-    'Your skip-level manager; formally supportive but expects concise evidence.',
-    'Questioned the Q3 figures in a leadership meeting two weeks ago.',
-    Offset(0.22, 0.26),
-    Color(0xFFC97955),
-    0.0,
-    0.88,
-    0.52,
-    0.72,
-  ),
-  _PersonData(
-    'Avery',
-    'Product Manager',
-    'Product Team',
-    'Analytical · Diplomatic · Builds coalitions',
-    'Close collaborator with occasional ownership tension.',
-    'Backed your delivery plan after you shared the source data.',
-    Offset(0.67, 0.25),
-    Color(0xFF7567B6),
-    0.24,
-    0.74,
-    0.68,
-    0.45,
-  ),
-  _PersonData(
-    'Sam',
-    'Senior Designer',
-    'Design Team',
-    'Creative · Direct · Sensitive to credit',
-    'Trusted peer; communication is candid and usually constructive.',
-    'Raised concern that design contributions were missing from the launch note.',
-    Offset(0.28, 0.69),
-    Color(0xFF278EAB),
-    0.48,
-    0.57,
-    0.81,
-    0.38,
-  ),
-  _PersonData(
-    'Jordan',
-    'Finance Partner',
-    'Finance Team',
-    'Cautious · Detail-driven · Controls resources',
-    'Necessary stakeholder; neutral relationship with limited contact.',
-    'Requested a second forecast review before approving project spend.',
-    Offset(0.73, 0.67),
-    Color(0xFFB77A2F),
-    0.72,
-    0.83,
-    0.43,
-    0.66,
-  ),
-  _PersonData(
-    'Taylor',
-    'Team Lead',
-    'Delivery Team',
-    'Ambitious · Social · Competes for visibility',
-    'Friendly competitor for senior-leadership visibility.',
-    'Presented a shared project result without naming your contribution.',
-    Offset(0.50, 0.35),
-    Color(0xFFB95670),
-    0.88,
-    0.69,
-    0.49,
-    0.78,
-  ),
-];
-
-class _PersonData {
-  const _PersonData(
-    this.name,
-    this.role,
-    this.team,
-    this.persona,
-    this.relationship,
-    this.majorEvent,
-    this.position,
-    this.color,
-    this.phase,
-    this.influence,
-    this.trust,
-    this.risk,
-  );
-
-  final String name;
-  final String role;
-  final String team;
-  final String persona;
-  final String relationship;
-  final String majorEvent;
-  final Offset position;
-  final Color color;
-  final double phase;
-  final double influence;
-  final double trust;
-  final double risk;
-
-  DesignAvatarData get avatar => switch (name) {
-    'Morgan' => DesignAvatarDraft.firstColleague,
-    'Avery' => const DesignAvatarData(
-      skinColor: Color(0xFFAE6E48),
-      hairColor: Color(0xFF342B2B),
-      outfitColor: Color(0xFF4DA988),
-      face: 1,
-      hair: 5,
-      eyes: 2,
-    ),
-    'Sam' => const DesignAvatarData(
-      skinColor: Color(0xFFF3BE96),
-      hairColor: Color(0xFF263D4D),
-      outfitColor: Color(0xFF3299D0),
-      hair: 3,
-      eyes: 1,
-      mouth: 1,
-    ),
-    'Jordan' => const DesignAvatarData(
-      skinColor: Color(0xFFFBD0AF),
-      hairColor: Color(0xFF87563A),
-      outfitColor: Color(0xFFD39B42),
-      face: 3,
-      hair: 1,
-      mouth: 2,
-      accessory: 1,
-    ),
-    _ => const DesignAvatarData(
-      skinColor: Color(0xFFF1BFA1),
-      hairColor: Color(0xFF4A3041),
-      outfitColor: Color(0xFFB95670),
-      face: 2,
-      hair: 10,
-      eyes: 1,
-    ),
-  };
-}
+final officePeopleDesignScreen = peopleNetworkPeopleDesignScreen
+    .skip(1)
+    .toList(growable: false);
 
 const _panelLabelStyle = TextStyle(
   color: Color(0xFF365F72),

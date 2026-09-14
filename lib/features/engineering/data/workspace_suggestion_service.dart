@@ -7,7 +7,8 @@ enum WorkspaceSetupSection {
   yourself('yourself'),
   colleague('colleague'),
   relationship('relationship'),
-  event('event');
+  event('event'),
+  advice('advice');
 
   const WorkspaceSetupSection(this.apiName);
 
@@ -79,6 +80,7 @@ class WorkspaceSuggestionService {
       WorkspaceSetupSection.colleague => 6,
       WorkspaceSetupSection.relationship => 5,
       WorkspaceSetupSection.event => 9,
+      WorkspaceSetupSection.advice => 5,
     };
     if (rawFields is! List || rawFields.length != expectedFieldCount) {
       throw const FormatException('Suggestion service returned invalid data');
@@ -224,6 +226,32 @@ List<WorkspaceFieldSuggestion> _previewSuggestions(
       WorkspaceFieldSuggestion(title: '68', description: ''),
       WorkspaceFieldSuggestion(title: '72', description: ''),
       WorkspaceFieldSuggestion(title: '84', description: ''),
+    ],
+    WorkspaceSetupSection.advice => const [
+      WorkspaceFieldSuggestion(
+        title: 'Deadline ownership dispute',
+        description:
+            '• Situation\n  ◦ A colleague disputed ownership of a missed deadline\n  ◦ A director was copied into the email exchange',
+      ),
+      WorkspaceFieldSuggestion(
+        title: 'Protect credibility',
+        description:
+            '• Desired Outcome\n  ◦ Correct the record without escalating conflict',
+      ),
+      WorkspaceFieldSuggestion(
+        title: 'You, Alex, Director Lee',
+        description: '',
+      ),
+      WorkspaceFieldSuggestion(
+        title: 'Email escalation',
+        description:
+            '• Observable Evidence\n  ◦ The deadline ownership was challenged in writing\n  ◦ The director received the message',
+      ),
+      WorkspaceFieldSuggestion(
+        title: 'Timeline and prior agreement',
+        description:
+            '• Missing Information\n  ◦ Who accepted ownership before the deadline\n  ◦ Whether a written project plan records that decision',
+      ),
     ],
   };
 }

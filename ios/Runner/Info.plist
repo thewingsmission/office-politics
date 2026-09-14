@@ -34,6 +34,10 @@
 	<string>Office Politics uses the microphone when you choose to dictate workplace context.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Office Politics converts your spoken workplace description into editable text.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Office Politics uses the camera when you choose to scan non-sensitive workplace text.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Office Politics accesses a selected image when you choose to recognize its text.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -47,6 +47,13 @@ const sectionFields = {
     ["urgency", "Urgency"],
     ["evidenceConfidence", "Evidence Confidence"],
   ],
+  advice: [
+    ["situationSummary", "Situation Summary"],
+    ["desiredOutcome", "Desired Outcome"],
+    ["involvedPeople", "Involved People"],
+    ["keyEvidence", "Key Evidence"],
+    ["missingInformation", "Missing Information"],
+  ],
 } as const;
 
 Deno.serve(async (request) => {
@@ -120,6 +127,7 @@ Rules:
 - For relationshipScore, return exactly one of "Very Bad", "Bad", "Neutral", "Good", or "Very Good" when the user's description supports a rating. Otherwise leave it empty. Use Very Bad for actively harmful or hostile dynamics, Bad for tense or low-trust dynamics, Neutral for limited or balanced evidence, Good for cooperative and trusting dynamics, and Very Good for strongly supportive and highly trusted dynamics.
 - In the event section, organize one event only. Date and time and involved people are direct values. Detailed Story and Personal Feeling require a short title and point-form description. Keep observed actions separate from the user's feelings and interpretations.
 - Event metric fields politicalImpact, personalStress, urgency, and evidenceConfidence must contain an integer from 0 to 100 in title and an empty description. Political Impact measures likely effect on power, reputation, resources, or decisions. Personal Stress measures the user's reported emotional strain. Urgency measures how soon the event needs attention. Evidence Confidence measures how well the account is supported by messages, documents, witnesses, or direct observation. Leave a metric empty when the prompt does not support it.
+- In the advice section, organize the user's material before advice is generated. Separate the situation, desired outcome, involved people, observable evidence, and missing information. Do not give recommendations in these fields and do not present inferred motives as facts.
 - Work culture means shared norms such as communication, hierarchy, trust, competition, and decision-making—not an individual's duties.
 - Whenever a field has an empty title, its description must also be empty.
 - For every supported non-factual field, always provide both a short title and a point-form description. Do not return a description without its title.

@@ -76,10 +76,11 @@ Supabase, AI, OCR, speech, ads, in-app purchases, or game services.
 ### First-launch screen map
 
 `Splash` → `Language Setup` → `Privacy Notice` → `Name Setup` → `Auth` →
-`Workspace Setup` → `Face Lab` → `Home`
+`Workspace Setup` → `Workplace` → `Yourself` → `Colleague` →
+`Relationship Setup` → `Face Lab` → `Home`
 
-`Workspace Setup` contains four sequential collection views after its
-introduction:
+The introduction and four collection steps are separately routed screens backed
+by the same shared implementation:
 
 1. **Workplace** — industry, department, location, culture, structure, current
    situation, and anything else the user considers important.
@@ -97,7 +98,7 @@ have their own profiles and directional pair relationships.
 ### Required design-screen naming
 
 - Every design-screen widget class ends with `DesignScreen`, such as
-  `CharacterEditorDesignScreen`.
+  `ColleagueDesignScreen`.
 - Every design-screen filename ends with `_design_screen.dart`, such as
   `character_editor_design_screen.dart`.
 - Every screen-level variable and route identifier ends with `DesignScreen`,
@@ -108,7 +109,7 @@ have their own profiles and directional pair relationships.
 - Keep all design screens after production work begins; they remain visual
   references and a manual design gallery.
 - After all designs are approved, clone each screen and remove `Design`:
-  `CharacterEditorDesignScreen` becomes `CharacterEditorScreen`. Connect logic
+  `ColleagueDesignScreen` becomes `ColleagueScreen`. Connect logic
   only in the production clone.
 
 ### Stage A — foundation and entry screens
@@ -129,125 +130,116 @@ have their own profiles and directional pair relationships.
 
 ### Stage B — people and case-file screens
 
-9. `WorkspaceSetupDesignScreen` — four guided views for workplace, self, first
-   colleague, and the user-colleague relationship.
-10. `PeopleNetworkDesignScreen` — moving characters, persona selection,
+9. `WorkspaceSetupDesignScreen` — introduction to the four focused setup forms.
+10. `WorkplaceDesignScreen` — reusable first-launch and modify workplace form.
+11. `YourselfDesignScreen` — reusable first-launch and modify-self form.
+12. `ColleagueDesignScreen` — reusable first-launch, create, and modify form.
+13. `RelationshipSetupDesignScreen` — reusable self-colleague and
+    colleague-colleague create/modify form.
+14. `PeopleNetworkDesignScreen` — moving characters, persona selection,
     collision-safe motion, and relationship gestures.
-11. `CharacterEditorDesignScreen` — a two-stage colleague-details and
-    user-colleague relationship flow reused by both Create Colleague and Modify
-    Persona.
-12. `FaceLabDesignScreen` — the first-launch flow edits self and first
+15. `FaceLabDesignScreen` — the first-launch flow edits self and first
     colleague; later create/modify flows edit only the selected colleague.
-13. `CharacterProfileDesignScreen` — selectable self/colleague profiles with
+16. `CharacterProfileDesignScreen` — selectable self/colleague profiles with
     avatar, persona, all recorded setup information, on-the-fly related events,
     and a relationship-edit action for non-self profiles.
-14. `RelationshipEditorDesignScreen` — create or modify either a
-    self-colleague or colleague-colleague relationship, with both personas,
-    shared events, current dynamic, and a five-level score.
-15. `RelationshipEditorDesignScreen` — four create/modify and pair-type modes,
-    both avatars and personas, Step 4 details, and relationship score.
-16. `EventTimelineDesignScreen` — dedicated Home category with chronological
+17. `EventTimelineDesignScreen` — dedicated Home category with chronological
     event cards, participant filtering, inspection, and Add Event.
-17. `EventEditorDesignScreen` — combined inspect/create modes, date/time,
+18. `EventEditorDesignScreen` — combined inspect/create modes, date/time,
     involved people, detailed story, personal feeling, LLM extraction, and
     adjustable political-impact, stress, urgency, and evidence-confidence bars.
-18. `ArtifactViewerDesignScreen` — source image/text, OCR result, provenance,
+19. `ArtifactViewerDesignScreen` — source image/text, OCR result, provenance,
     retention, and delete controls.
 
 ### Stage C — coaching input and output screens
 
-19. `AdviceInputDesignScreen` — question, goal, selected people/events, typed
-    context, image, and voice entry.
-20. `ImageCaptureDesignScreen` — camera/gallery entry, crop, rotate, and
-    perspective preview.
-21. `OcrReviewDesignScreen` — image beside editable recognized text, region
-    selection, confidence, and optional redaction.
-22. `VoiceInputDesignScreen` — 55-second countdown, live transcript,
-    pause/continue segments, correction, and locale state.
-23. `AdviceResultDesignScreen` — observations, unknowns, hypotheses, evidence,
+20. `AdviceInputDesignScreen` — question, goal, selected people/events, typed
+    context, camera/gallery OCR with editable results, and localized device
+    dictation in one screen.
+21. `AdviceResultDesignScreen` — observations, unknowns, hypotheses, evidence,
     recommendation, scripts, risks, and escalation guidance.
-24. `ReplySimulatorInputDesignScreen` — incoming message plus reply A/B/C and
+22. `ReplySimulatorInputDesignScreen` — incoming message plus reply A/B/C and
     user goal.
-25. `ReplySimulatorResultDesignScreen` — conditional response branches,
+23. `ReplySimulatorResultDesignScreen` — conditional response branches,
     warning indicators, harm/benefit, reversibility, ranking, and comparison.
-26. `PredictionOutcomeDesignScreen` — record what actually happened and compare
+24. `PredictionOutcomeDesignScreen` — record what actually happened and compare
     it with prior branches.
-27. `RoleplaySetupDesignScreen` — person, goal, tone, difficulty, and scenario.
-28. `RoleplaySessionDesignScreen` — conversation turns, voice/text response,
+25. `RoleplaySetupDesignScreen` — person, goal, tone, difficulty, and scenario.
+26. `RoleplaySessionDesignScreen` — conversation turns, voice/text response,
     pause, and exit.
-29. `RoleplayFeedbackDesignScreen` — clarity, evidence, boundaries, risks, and
+27. `RoleplayFeedbackDesignScreen` — clarity, evidence, boundaries, risks, and
     retry.
-30. `AdviceHistoryDesignScreen` — previous sessions, saved scripts,
+28. `AdviceHistoryDesignScreen` — previous sessions, saved scripts,
     predictions, and outcomes.
 
 ### Stage D — office, knowledge, and intelligence screens
 
-31. `OfficeMapListDesignScreen` — saved office layouts and templates.
-32. `OfficeMapEditorDesignScreen` — isometric drag-and-drop floor builder with
+29. `OfficeMapListDesignScreen` — saved office layouts and templates.
+30. `OfficeMapEditorDesignScreen` — isometric drag-and-drop floor builder with
     shaped walls, desks, chairs, partitions, rooms, character seats, selection,
     rotation, and undo/redo.
-33. `OfficeCharacterPanelDesignScreen` — selected person summary and shortcuts
+31. `OfficeCharacterPanelDesignScreen` — selected person summary and shortcuts
     from the map.
-34. `BusinessOutlookDesignScreen` — current macro signals, citations, age,
+32. `BusinessOutlookDesignScreen` — current macro signals, citations, age,
     confidence, affected business factors, and refresh state.
-35. `IndustryProfileDesignScreen` — countries, products, customers,
+33. `IndustryProfileDesignScreen` — countries, products, customers,
     competitors, regulation, and optional ticker.
-36. `MottoFeedDesignScreen` — contextual motto cards with source,
+34. `MottoFeedDesignScreen` — contextual motto cards with source,
     interpretation, misuse warning, save, and share.
-37. `MottoLibraryDesignScreen` — browse, search, filter, and favorites.
-38. `ScenarioLibraryDesignScreen` — sourced office-politics patterns, evidence
+35. `MottoLibraryDesignScreen` — browse, search, filter, and favorites.
+36. `ScenarioLibraryDesignScreen` — sourced office-politics patterns, evidence
     tiers, case studies, and related advice.
-39. `ScenarioDetailDesignScreen` — actors, timeline, signals, alternatives,
+37. `ScenarioDetailDesignScreen` — actors, timeline, signals, alternatives,
     outcomes, responses, caveats, and citations.
 
 ### Stage E — arcade screens
 
-40. `ArcadeDesignScreen` — game selection, passes, contest status, and
+38. `ArcadeDesignScreen` — game selection, passes, contest status, and
     rewards.
-41. `SlapDeskDesignScreen` — playable fictional gameplay with its instructions
+39. `SlapDeskDesignScreen` — playable fictional gameplay with its instructions
     embedded in the game screen.
-42. `CreditChaseDesignScreen` — playable fictional gameplay with its
+40. `CreditChaseDesignScreen` — playable fictional gameplay with its
     instructions embedded in the game screen.
-43. `RumourFlipDesignScreen` — playable fictional gameplay with its
+41. `RumourFlipDesignScreen` — playable fictional gameplay with its
     instructions embedded in the game screen.
-44. `FivePmGhostDesignScreen` — playable fictional gameplay with its
+42. `FivePmGhostDesignScreen` — playable fictional gameplay with its
     instructions embedded in the game screen.
     Each of the four game screens presents pause/resume controls and final
     results as popup windows rather than separate screens.
-45. `ContestListDesignScreen` — daily, weekly, and monthly skill contests.
-46. `LeaderboardDesignScreen` — score-only ranking, season, and personal best.
-47. `RewardedAdOfferDesignScreen` — continue/time/slow-mo/reveal choices and
+43. `ContestListDesignScreen` — daily, weekly, and monthly skill contests.
+44. `LeaderboardDesignScreen` — score-only ranking, season, and personal best.
+45. `RewardedAdOfferDesignScreen` — continue/time/slow-mo/reveal choices and
     cap state.
-48. `PremiumPassDesignScreen` — earned pass status and expiry.
+46. `PremiumPassDesignScreen` — earned pass status and expiry.
 
 ### Stage F — settings and complete-state review
 
-49. `SettingsDesignScreen` — language, appearance, notifications, AI provider,
+47. `SettingsDesignScreen` — language, appearance, notifications, AI provider,
     data, accessibility, and legal links.
-50. `DataControlsDesignScreen` — retention, export, deletion, consent history,
+48. `DataControlsDesignScreen` — retention, export, deletion, consent history,
     and provider permission.
-51. `NotificationCenterDesignScreen` — macro updates, contest results, and
+49. `NotificationCenterDesignScreen` — macro updates, contest results, and
     saved reminders.
-52. `HelpSafetyDesignScreen` — limitations, reporting/escalation resources, and
+50. `HelpSafetyDesignScreen` — limitations, reporting/escalation resources, and
     emergency guidance.
-53. Review every screen in all three languages and representative phone/tablet
+51. Review every screen in all three languages and representative phone/tablet
     sizes, including loading, empty, error, offline, locked, and premium states.
-54. Freeze approved screen contracts: required input data, emitted user
+52. Freeze approved screen contracts: required input data, emitted user
     actions, navigation destinations, and reusable components.
 
 ### Stage G — clone and connect production screens
 
-55. Clone approved design screens into production files and remove `Design`
+53. Clone approved design screens into production files and remove `Design`
     from class, filename, variable, and route names.
-56. Connect navigation and session state without changing approved layouts.
-57. Connect account, subscription, and data-control logic.
-58. Connect workspace, people, relationships, events, artifacts, and office-map
+54. Connect navigation and session state without changing approved layouts.
+55. Connect account, subscription, and data-control logic.
+56. Connect workspace, people, relationships, events, artifacts, and office-map
     repositories.
-59. Connect OCR and speech services.
-60. Connect the AI gateway, advice, reply simulation, roleplay, mottos, and
+57. Connect OCR and speech services.
+58. Connect the AI gateway, advice, reply simulation, roleplay, mottos, and
     macro intelligence.
-61. Connect arcade engine, contests, rewarded ads, premium grants, and IAP.
-62. Add unit, widget, golden, integration, privacy, accessibility, and device
+59. Connect arcade engine, contests, rewarded ads, premium grants, and IAP.
+60. Add unit, widget, golden, integration, privacy, accessibility, and device
     tests; then complete store-readiness work.
 
 ---

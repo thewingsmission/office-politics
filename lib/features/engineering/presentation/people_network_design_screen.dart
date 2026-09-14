@@ -37,9 +37,6 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
   Offset? hoverAnchorDesignScreen;
   bool relationshipTargetReadyDesignScreen = false;
   Timer? targetHoldTimerDesignScreen;
-  double outerGlowScaleDesignScreen = 1.25;
-  double outerGlowOpacityDesignScreen = 0.55;
-
   @override
   void initState() {
     super.initState();
@@ -211,44 +208,26 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
+                    const Padding(
                       padding: EdgeInsets.only(left: 18),
-                      child: Row(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'People & Relationships',
-                                  style: TextStyle(
-                                    color: Color(0xFF173F5D),
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                SizedBox(height: 3),
-                                Text(
-                                  'Tap a person for their persona • Hold, drag, hold over another person, then release to view their relationship',
-                                  style: TextStyle(
-                                    color: Color(0xFF5E8196),
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            'People & Relationships',
+                            style: TextStyle(
+                              color: Color(0xFF173F5D),
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          _GlowTunePanel(
-                            scale: outerGlowScaleDesignScreen,
-                            opacity: outerGlowOpacityDesignScreen,
-                            onScaleChanged: (value) => setState(
-                              () => outerGlowScaleDesignScreen = value,
-                            ),
-                            onOpacityChanged: (value) => setState(
-                              () => outerGlowOpacityDesignScreen = value,
+                          SizedBox(height: 3),
+                          Text(
+                            'Tap a person for their persona • Hold, drag, hold over another person, then release to view their relationship',
+                            style: TextStyle(
+                              color: Color(0xFF5E8196),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -320,7 +299,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                             key: ValueKey(
                                               'people-network-person-$index',
                                             ),
-                                            child: _MovingPerson(
+                                            child: NetworkMovingPersonDesignScreen(
                                               key: actorKeysDesignScreen[index],
                                               person:
                                                   peopleNetworkPeopleDesignScreen[index],
@@ -335,10 +314,12 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                                       index ||
                                                   dragSourceDesignScreen ==
                                                       index,
-                                              outerGlowScale:
-                                                  outerGlowScaleDesignScreen,
-                                              outerGlowOpacity:
-                                                  outerGlowOpacityDesignScreen,
+                                              headInnerGlowScale: 1.15,
+                                              headOuterGlowScale: 1.75,
+                                              headOuterGlowOpacity: 0.65,
+                                              bodyInnerGlowScale: 1.65,
+                                              bodyOuterGlowScale: 1.75,
+                                              bodyOuterGlowOpacity: 0.65,
                                               onPressStart: () =>
                                                   beginPersonPressDesignScreen(
                                                     index,
@@ -405,7 +386,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                       child: AppButton(
                                         label: 'Modify Persona',
                                         onPressed: () => context.go(
-                                          '/design/character-editor?mode=modify',
+                                          '/design/colleague?mode=modify',
                                         ),
                                       ),
                                     ),
@@ -429,7 +410,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                           selectedRelationshipDesignScreen;
                                       if (relationship == null) {
                                         context.go(
-                                          '/design/character-editor?mode=create',
+                                          '/design/colleague?mode=create',
                                         );
                                         return;
                                       }
@@ -441,12 +422,12 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                           peopleNetworkPeopleDesignScreen[relationship
                                                   .target]
                                               .name;
-                                      final pairCase =
+                                      final pairMode =
                                           source == 'You' || target == 'You'
-                                          ? 'modify-self-other'
-                                          : 'modify-colleagues';
+                                          ? 'modify'
+                                          : 'modify-pair';
                                       context.go(
-                                        '/design/relationship-editor?case=$pairCase',
+                                        '/design/relationship-setup?mode=$pairMode',
                                       );
                                     },
                                   ),
@@ -460,113 +441,6 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _GlowTunePanel extends StatelessWidget {
-  const _GlowTunePanel({
-    required this.scale,
-    required this.opacity,
-    required this.onScaleChanged,
-    required this.onOpacityChanged,
-  });
-
-  final double scale;
-  final double opacity;
-  final ValueChanged<double> onScaleChanged;
-  final ValueChanged<double> onOpacityChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('people-network-glow-tune'),
-      width: 176,
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF9EDCF5)),
-      ),
-      child: Column(
-        children: [
-          _GlowTuneRow(
-            label: 'Outer Size',
-            value: '${scale.toStringAsFixed(2)}×',
-            onDecrease: () => onScaleChanged((scale - 0.05).clamp(1.05, 1.8)),
-            onIncrease: () => onScaleChanged((scale + 0.05).clamp(1.05, 1.8)),
-          ),
-          _GlowTuneRow(
-            label: 'Outer Opacity',
-            value: '${(opacity * 100).round()}%',
-            onDecrease: () => onOpacityChanged((opacity - 0.05).clamp(0.1, 1)),
-            onIncrease: () => onOpacityChanged((opacity + 0.05).clamp(0.1, 1)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowTuneRow extends StatelessWidget {
-  const _GlowTuneRow({
-    required this.label,
-    required this.value,
-    required this.onDecrease,
-    required this.onIncrease,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback onDecrease;
-  final VoidCallback onIncrease;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 19,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '$label  $value',
-              style: const TextStyle(
-                color: Color(0xFF356A84),
-                fontSize: 6.8,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          _GlowTuneButton(icon: Icons.remove_rounded, onPressed: onDecrease),
-          const SizedBox(width: 3),
-          _GlowTuneButton(icon: Icons.add_rounded, onPressed: onIncrease),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowTuneButton extends StatelessWidget {
-  const _GlowTuneButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(5),
-      child: Container(
-        width: 17,
-        height: 15,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE7F4FF),
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(color: const Color(0xFF65C5ED)),
-        ),
-        child: Icon(icon, size: 10, color: const Color(0xFF277BAA)),
       ),
     );
   }
@@ -611,7 +485,7 @@ class _PeopleNetworkGuide extends StatelessWidget {
 class _PersonaPanel extends StatelessWidget {
   const _PersonaPanel({super.key, required this.person});
 
-  final _NetworkPerson person;
+  final NetworkPersonDesignScreen person;
 
   @override
   Widget build(BuildContext context) {
@@ -677,7 +551,7 @@ class _PersonaPanel extends StatelessWidget {
 class _PersonaAvatar extends StatelessWidget {
   const _PersonaAvatar({required this.person});
 
-  final _NetworkPerson person;
+  final NetworkPersonDesignScreen person;
 
   @override
   Widget build(BuildContext context) {
@@ -851,7 +725,7 @@ class _RelationshipPanel extends StatelessWidget {
 class _RelationshipAvatar extends StatelessWidget {
   const _RelationshipAvatar({required this.person});
 
-  final _NetworkPerson person;
+  final NetworkPersonDesignScreen person;
 
   @override
   Widget build(BuildContext context) {
@@ -927,15 +801,19 @@ class _PanelEntry extends StatelessWidget {
   }
 }
 
-class _MovingPerson extends StatelessWidget {
-  const _MovingPerson({
+class NetworkMovingPersonDesignScreen extends StatelessWidget {
+  const NetworkMovingPersonDesignScreen({
     super.key,
     required this.person,
     required this.motion,
     required this.selected,
     required this.connectionSelected,
-    required this.outerGlowScale,
-    required this.outerGlowOpacity,
+    required this.headInnerGlowScale,
+    required this.headOuterGlowScale,
+    required this.headOuterGlowOpacity,
+    required this.bodyInnerGlowScale,
+    required this.bodyOuterGlowScale,
+    required this.bodyOuterGlowOpacity,
     required this.onPressStart,
     required this.onPressEnd,
     required this.onTap,
@@ -944,12 +822,16 @@ class _MovingPerson extends StatelessWidget {
     required this.onDragEnd,
   });
 
-  final _NetworkPerson person;
+  final NetworkPersonDesignScreen person;
   final double motion;
   final bool selected;
   final bool connectionSelected;
-  final double outerGlowScale;
-  final double outerGlowOpacity;
+  final double headInnerGlowScale;
+  final double headOuterGlowScale;
+  final double headOuterGlowOpacity;
+  final double bodyInnerGlowScale;
+  final double bodyOuterGlowScale;
+  final double bodyOuterGlowOpacity;
   final VoidCallback onPressStart;
   final VoidCallback onPressEnd;
   final VoidCallback onTap;
@@ -1037,8 +919,12 @@ class _MovingPerson extends StatelessWidget {
                         stride: stride,
                         idle: idle,
                         glow: glow,
-                        outerGlowScale: outerGlowScale,
-                        outerGlowOpacity: outerGlowOpacity,
+                        headInnerGlowScale: headInnerGlowScale,
+                        headOuterGlowScale: headOuterGlowScale,
+                        headOuterGlowOpacity: headOuterGlowOpacity,
+                        bodyInnerGlowScale: bodyInnerGlowScale,
+                        bodyOuterGlowScale: bodyOuterGlowScale,
+                        bodyOuterGlowOpacity: bodyOuterGlowOpacity,
                       ),
                     ),
                   ),
@@ -1058,16 +944,24 @@ class _FrontFacingBody extends StatelessWidget {
     required this.stride,
     required this.idle,
     required this.glow,
-    required this.outerGlowScale,
-    required this.outerGlowOpacity,
+    required this.headInnerGlowScale,
+    required this.headOuterGlowScale,
+    required this.headOuterGlowOpacity,
+    required this.bodyInnerGlowScale,
+    required this.bodyOuterGlowScale,
+    required this.bodyOuterGlowOpacity,
   });
 
-  final _NetworkPerson person;
+  final NetworkPersonDesignScreen person;
   final double stride;
   final double idle;
   final double glow;
-  final double outerGlowScale;
-  final double outerGlowOpacity;
+  final double headInnerGlowScale;
+  final double headOuterGlowScale;
+  final double headOuterGlowOpacity;
+  final double bodyInnerGlowScale;
+  final double bodyOuterGlowScale;
+  final double bodyOuterGlowOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -1083,8 +977,12 @@ class _FrontFacingBody extends StatelessWidget {
             painter: _PersonSilhouetteGlowPainter(
               color: person.shirtColor,
               intensity: glow,
-              outerScale: outerGlowScale,
-              outerOpacity: outerGlowOpacity,
+              headInnerScale: headInnerGlowScale,
+              headOuterScale: headOuterGlowScale,
+              headOuterOpacity: headOuterGlowOpacity,
+              bodyInnerScale: bodyInnerGlowScale,
+              bodyOuterScale: bodyOuterGlowScale,
+              bodyOuterOpacity: bodyOuterGlowOpacity,
             ),
           ),
         ),
@@ -1160,37 +1058,43 @@ class _PersonSilhouetteGlowPainter extends CustomPainter {
   const _PersonSilhouetteGlowPainter({
     required this.color,
     required this.intensity,
-    required this.outerScale,
-    required this.outerOpacity,
+    required this.headInnerScale,
+    required this.headOuterScale,
+    required this.headOuterOpacity,
+    required this.bodyInnerScale,
+    required this.bodyOuterScale,
+    required this.bodyOuterOpacity,
   });
 
   final Color color;
   final double intensity;
-  final double outerScale;
-  final double outerOpacity;
+  final double headInnerScale;
+  final double headOuterScale;
+  final double headOuterOpacity;
+  final double bodyInnerScale;
+  final double bodyOuterScale;
+  final double bodyOuterOpacity;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (intensity <= 0) return;
     final centerX = size.width / 2;
     final paleColor = Color.lerp(color, Colors.white, 0.48)!;
-    _drawGlowCircle(
-      canvas,
-      center: Offset(centerX, 25),
-      shapeRadius: 23,
-      paleColor: paleColor,
-    );
-    _drawBodyGlow(canvas, center: Offset(centerX, 57), paleColor: paleColor);
+    final headCenter = Offset(centerX, 25);
+    final bodyCenter = Offset(centerX, 57);
+    _drawBodyOuter(canvas, center: bodyCenter, paleColor: paleColor);
+    _drawHeadOuter(canvas, center: headCenter, paleColor: paleColor);
+    _drawBodyInner(canvas, center: bodyCenter);
+    _drawHeadInner(canvas, center: headCenter);
   }
 
-  void _drawGlowCircle(
+  void _drawHeadOuter(
     Canvas canvas, {
     required Offset center,
-    required double shapeRadius,
     required Color paleColor,
   }) {
-    final innerRadius = shapeRadius * 1.15;
-    final outerRadius = innerRadius * outerScale;
+    final innerRadius = 23 * headInnerScale;
+    final outerRadius = innerRadius * headOuterScale;
     final area = Rect.fromCircle(center: center, radius: outerRadius);
     canvas.drawCircle(
       center,
@@ -1198,21 +1102,24 @@ class _PersonSilhouetteGlowPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            paleColor.withValues(alpha: outerOpacity * intensity),
-            paleColor.withValues(alpha: outerOpacity * intensity),
+            paleColor.withValues(alpha: headOuterOpacity * intensity),
+            paleColor.withValues(alpha: headOuterOpacity * intensity),
             paleColor.withValues(alpha: 0),
           ],
           stops: [0, innerRadius / outerRadius, 1],
         ).createShader(area),
     );
+  }
+
+  void _drawHeadInner(Canvas canvas, {required Offset center}) {
     canvas.drawCircle(
       center,
-      innerRadius,
+      23 * headInnerScale,
       Paint()..color = color.withValues(alpha: 0.5 * intensity),
     );
   }
 
-  void _drawBodyGlow(
+  void _drawBodyOuter(
     Canvas canvas, {
     required Offset center,
     required Color paleColor,
@@ -1220,13 +1127,12 @@ class _PersonSilhouetteGlowPainter extends CustomPainter {
     const bodyWidth = 34.0;
     const bodyHeight = 32.0;
     const bodyRadius = 14.0;
-    const innerScale = 1.15;
-    final outerBodyScale = innerScale * outerScale;
+    final outerBodyScale = bodyInnerScale * bodyOuterScale;
 
     for (var layer = 0; layer <= 14; layer++) {
       final progress = layer / 14;
       final layerScale =
-          outerBodyScale - (outerBodyScale - innerScale) * progress;
+          outerBodyScale - (outerBodyScale - bodyInnerScale) * progress;
       final layerRect = Rect.fromCenter(
         center: center,
         width: bodyWidth * layerScale,
@@ -1239,20 +1145,25 @@ class _PersonSilhouetteGlowPainter extends CustomPainter {
         ),
         Paint()
           ..color = paleColor.withValues(
-            alpha: outerOpacity * intensity * pow(progress, 1.7).toDouble(),
+            alpha: bodyOuterOpacity * intensity * pow(progress, 1.7).toDouble(),
           ),
       );
     }
+  }
 
+  void _drawBodyInner(Canvas canvas, {required Offset center}) {
+    const bodyWidth = 34.0;
+    const bodyHeight = 32.0;
+    const bodyRadius = 14.0;
     final innerRect = Rect.fromCenter(
       center: center,
-      width: bodyWidth * innerScale,
-      height: bodyHeight * innerScale,
+      width: bodyWidth * bodyInnerScale,
+      height: bodyHeight * bodyInnerScale,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         innerRect,
-        const Radius.circular(bodyRadius * innerScale),
+        Radius.circular(bodyRadius * bodyInnerScale),
       ),
       Paint()..color = color.withValues(alpha: 0.5 * intensity),
     );
@@ -1262,8 +1173,12 @@ class _PersonSilhouetteGlowPainter extends CustomPainter {
   bool shouldRepaint(covariant _PersonSilhouetteGlowPainter oldDelegate) =>
       color != oldDelegate.color ||
       intensity != oldDelegate.intensity ||
-      outerScale != oldDelegate.outerScale ||
-      outerOpacity != oldDelegate.outerOpacity;
+      headInnerScale != oldDelegate.headInnerScale ||
+      headOuterScale != oldDelegate.headOuterScale ||
+      headOuterOpacity != oldDelegate.headOuterOpacity ||
+      bodyInnerScale != oldDelegate.bodyInnerScale ||
+      bodyOuterScale != oldDelegate.bodyOuterScale ||
+      bodyOuterOpacity != oldDelegate.bodyOuterOpacity;
 }
 
 class _Limb extends StatelessWidget {
@@ -1419,8 +1334,8 @@ class _RelationshipSelection {
   int get hashCode => Object.hash(source, target);
 }
 
-class _NetworkPerson {
-  const _NetworkPerson({
+class NetworkPersonDesignScreen {
+  const NetworkPersonDesignScreen({
     required this.name,
     required this.role,
     required this.personaEntries,
@@ -1446,10 +1361,29 @@ class _NetworkPerson {
 
   Color get skinColor => avatar.skinColor;
   Color get shirtColor => avatar.outfitColor;
+  Color get color => avatar.outfitColor;
+  String get team => role;
+  String get persona =>
+      personaEntries.map((entry) => '${entry.$1}: ${entry.$2}').join(' · ');
+  String get relationship =>
+      _entryValue(['Current Relationship', 'Relation to You']);
+  String get majorEvent => _entryValue(['Major Events']);
+  double get influence => personaMetrics[0];
+  double get trust => personaMetrics[1];
+  double get risk => personaMetrics[5];
+
+  String _entryValue(List<String> labels) {
+    for (final label in labels) {
+      for (final entry in personaEntries) {
+        if (entry.$1 == label) return entry.$2;
+      }
+    }
+    return 'Not yet recorded';
+  }
 }
 
-const peopleNetworkPeopleDesignScreen = <_NetworkPerson>[
-  _NetworkPerson(
+const peopleNetworkPeopleDesignScreen = <NetworkPersonDesignScreen>[
+  NetworkPersonDesignScreen(
     name: 'You',
     role: 'Product Analyst',
     personaEntries: [
@@ -1471,7 +1405,7 @@ const peopleNetworkPeopleDesignScreen = <_NetworkPerson>[
       mouth: 0,
     ),
   ),
-  _NetworkPerson(
+  NetworkPersonDesignScreen(
     name: 'Alex',
     role: 'Project Manager',
     personaEntries: [
@@ -1493,7 +1427,7 @@ const peopleNetworkPeopleDesignScreen = <_NetworkPerson>[
       mouth: 1,
     ),
   ),
-  _NetworkPerson(
+  NetworkPersonDesignScreen(
     name: 'Maya',
     role: 'Operations Lead',
     personaEntries: [
@@ -1515,7 +1449,7 @@ const peopleNetworkPeopleDesignScreen = <_NetworkPerson>[
       mouth: 0,
     ),
   ),
-  _NetworkPerson(
+  NetworkPersonDesignScreen(
     name: 'Jordan',
     role: 'Finance Partner',
     personaEntries: [

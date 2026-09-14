@@ -120,9 +120,9 @@ class _ScreenMapHeader extends StatelessWidget {
               ],
             ),
           ),
-          const _MapStat(label: '51 SCREENS'),
+          const _MapStat(label: '50 SCREENS'),
           const SizedBox(width: 7),
-          const _MapStat(label: '6 JOURNEYS'),
+          const _MapStat(label: '7 JOURNEYS'),
           const SizedBox(width: 7),
           const _MapStat(label: '1 HOME HUB'),
         ],
@@ -178,6 +178,10 @@ class _OverviewMap extends StatelessWidget {
                   'Name',
                   'Auth',
                   'Workspace Setup',
+                  'Workplace',
+                  'Yourself',
+                  'Colleague',
+                  'Relationship Setup',
                 ],
               ),
             ),
@@ -639,7 +643,7 @@ const screenMapJourneysDesignScreen = <_ScreenMapJourney>[
   _ScreenMapJourney(
     id: 'entry',
     label: 'First launch',
-    screenCount: 10,
+    screenCount: 14,
     entry: 'App opened',
     outcome: 'User reaches Home with a configured workspace.',
     stages: [
@@ -651,9 +655,15 @@ const screenMapJourneysDesignScreen = <_ScreenMapJourney>[
         'Auth',
       ], 'Shown only when required.'),
       _ScreenMapStage(
-        'Workspace Setup · 4 views',
-        ['Workplace', 'Yourself', 'First Colleague', 'Relationship With You'],
-        'Keep colleague details separate from the user-colleague relationship.',
+        'Workspace Setup · 5 screens',
+        [
+          'Workspace Setup',
+          'Workplace',
+          'Yourself',
+          'Colleague',
+          'Relationship Setup',
+        ],
+        'Each reusable form is maintained as one screen and can serve first-launch or later editing.',
       ),
       _ScreenMapStage('Avatars', [
         'Face Lab',
@@ -668,21 +678,23 @@ const screenMapJourneysDesignScreen = <_ScreenMapJourney>[
   _ScreenMapJourney(
     id: 'people',
     label: 'People & relationships',
-    screenCount: 6,
+    screenCount: 9,
     entry: 'Home → colleague or People',
     outcome: 'Reusable people and pairwise relationship records.',
     stages: [
-      _ScreenMapStage('Context', [
-        'Workspace Setup',
-      ], 'Workplace, user, first colleague, and relationship context.'),
+      _ScreenMapStage(
+        'Reusable context',
+        ['Workplace', 'Yourself', 'Colleague', 'Relationship Setup'],
+        'The same forms serve first launch, create, and modify scenarios.',
+      ),
       _ScreenMapStage(
         'People & relationships',
         [
           'People Network',
-          'Character Editor',
+          'Colleague',
           'Face Lab',
           'Character Profile',
-          'Relationship Editor',
+          'Relationship Setup',
         ],
         'Explore personas and relationships, then open focused editors.',
       ),
@@ -711,17 +723,13 @@ const screenMapJourneysDesignScreen = <_ScreenMapJourney>[
   _ScreenMapJourney(
     id: 'coach',
     label: 'Coach',
-    screenCount: 12,
+    screenCount: 9,
     entry: 'Home → Advice',
     outcome: 'Advice, tested replies, practice, and recorded outcomes.',
     stages: [
       _ScreenMapStage('Ask', [
         'Advice Input',
-      ], 'Question, goal, people, and events.'),
-      _ScreenMapStage('Input tools', [
-        'Image Capture → OCR Review',
-        'Voice Input',
-      ], 'Return corrected text to Advice Input.'),
+      ], 'Question, goal, people, events, editable OCR, and voice.'),
       _ScreenMapStage('Analysis', [
         'Advice Result',
       ], 'Evidence, scenarios, options, and confidence.'),

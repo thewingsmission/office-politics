@@ -9,14 +9,15 @@ import 'package:office_politics/features/account/application/session_controller.
 import 'package:office_politics/features/account/data/local_account_repository.dart';
 import 'package:office_politics/features/engineering/data/first_launch_design_draft.dart';
 import 'package:office_politics/features/engineering/domain/design_screen_definition.dart';
+import 'package:office_politics/features/engineering/presentation/advice_input_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/auth_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/arcade_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/arcade_game_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/design_back_button.dart';
 import 'package:office_politics/features/engineering/presentation/design_avatar.dart';
 import 'package:office_politics/features/engineering/presentation/design_preview_design_screen.dart';
-import 'package:office_politics/features/engineering/presentation/character_editor_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/character_profile_design_screen.dart';
+import 'package:office_politics/features/engineering/presentation/colleague_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/engineering_screen.dart';
 import 'package:office_politics/features/engineering/presentation/event_editor_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/event_timeline_design_screen.dart';
@@ -29,10 +30,12 @@ import 'package:office_politics/features/engineering/presentation/name_setup_des
 import 'package:office_politics/features/engineering/presentation/office_map_editor_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/people_network_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/privacy_notice_design_screen.dart';
-import 'package:office_politics/features/engineering/presentation/relationship_editor_design_screen.dart';
+import 'package:office_politics/features/engineering/presentation/relationship_setup_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/screen_map_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/splash_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/workspace_setup_design_screen.dart';
+import 'package:office_politics/features/engineering/presentation/workplace_design_screen.dart';
+import 'package:office_politics/features/engineering/presentation/yourself_design_screen.dart';
 import 'package:office_politics/l10n/generated/app_localizations.dart';
 
 void main() {
@@ -108,13 +111,13 @@ void main() {
 
     expect(find.text('Office Politics Screen Map'), findsOneWidget);
     expect(find.text('HOME'), findsOneWidget);
-    expect(find.text('51 SCREENS'), findsOneWidget);
+    expect(find.text('50 SCREENS'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(AppButton, 'First launch'));
     await tester.pump();
-    expect(find.text('3. WORKSPACE SETUP · 4 VIEWS'), findsOneWidget);
-    expect(find.text('First Colleague'), findsOneWidget);
-    expect(find.text('Relationship With You'), findsOneWidget);
+    expect(find.text('3. WORKSPACE SETUP · 5 SCREENS'), findsOneWidget);
+    expect(find.text('Colleague'), findsOneWidget);
+    expect(find.text('Relationship Setup'), findsOneWidget);
 
     await tester.tap(find.text('Coach').first);
     await tester.pump();
@@ -163,8 +166,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-    expect(find.text('WHAT HAPPENED?'), findsOneWidget);
-    expect(find.text('Analyze situation'), findsWidgets);
+    expect(find.text('Tell us what happened'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Analyze'), findsOneWidget);
 
     tester.widget<DesignBackButton>(find.byType(DesignBackButton)).onPressed();
     await tester.pumpAndSettle();
@@ -569,10 +572,8 @@ void main() {
     expect(find.text('People & Relationships'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('people-network-glow-tune')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.textContaining('Outer Size  1.25×'), findsOneWidget);
-    expect(find.textContaining('Outer Opacity  55%'), findsOneWidget);
     expect(find.byKey(const ValueKey('people-network-guide')), findsOneWidget);
     expect(find.text('Create Colleague'), findsOneWidget);
     expect(
@@ -585,7 +586,7 @@ void main() {
     );
 
     await tester.tap(find.byKey(const ValueKey('people-network-person-1')));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(
       find.byKey(const ValueKey('people-network-persona')),
       findsOneWidget,
@@ -614,6 +615,22 @@ void main() {
         .painter;
     expect(panelAvatarPainter, isA<DesignAvatarPainter>());
     expect(walkingAvatarPainter, isA<DesignAvatarHeadPainter>());
+    final dynamic glowPainter = tester
+        .widget<CustomPaint>(
+          find
+              .descendant(
+                of: find.byKey(const ValueKey('people-network-person-1')),
+                matching: find.byType(CustomPaint),
+              )
+              .first,
+        )
+        .painter;
+    expect(glowPainter.headInnerScale, 1.15);
+    expect(glowPainter.headOuterScale, 1.75);
+    expect(glowPainter.headOuterOpacity, 0.65);
+    expect(glowPainter.bodyInnerScale, 1.65);
+    expect(glowPainter.bodyOuterScale, 1.75);
+    expect(glowPainter.bodyOuterOpacity, 0.65);
     expect(
       identical(
         (panelAvatarPainter! as DesignAvatarPainter).avatar,
@@ -754,7 +771,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('relationship editor previews four pair and action modes', (
+  testWidgets('relationship setup reuses one screen for all pair modes', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(956, 440);
@@ -765,31 +782,29 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: const RelationshipEditorDesignScreen(),
+        home: const RelationshipSetupDesignScreen(),
       ),
     );
     await tester.pump();
-    expect(find.text('Modify Relationship'), findsWidgets);
-    expect(find.text('You ↔ Alex'), findsOneWidget);
+    expect(find.text('Step 4 · Describe your relationship'), findsOneWidget);
     expect(find.text('Relationship Score'), findsOneWidget);
-    expect(find.text('How They Work Together'), findsOneWidget);
-    expect(find.text('Save Relationship'), findsOneWidget);
-
-    await tester.tap(find.text('Create Self + Other'));
+    await tester.tap(find.byKey(const ValueKey('workspace-scenario-selector')));
+    await tester.pumpAndSettle();
+    expect(find.text('Create'), findsOneWidget);
+    expect(find.text('Modify'), findsWidgets);
+    expect(find.text('Create Pair'), findsOneWidget);
+    expect(find.text('Modify Pair'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('workspace-scenario-createPair')),
+    );
     await tester.pump();
-    expect(find.text('You ↔ New Colleague'), findsOneWidget);
-    expect(find.text('Create Relationship'), findsWidgets);
-
-    await tester.tap(find.text('Create Two Colleagues'));
-    await tester.pump();
-    expect(find.text('Maya ↔ New Colleague'), findsOneWidget);
-
-    await tester.tap(find.text('Modify Two Colleagues'));
-    await tester.pump();
-    expect(find.text('Maya ↔ Jordan'), findsOneWidget);
-    expect(find.text('Save Relationship'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('relationship-editor-pair-panel')),
+      find.byKey(const ValueKey('relationship-setup-pair-hero')),
+      findsOneWidget,
+    );
+    expect(find.text('Maya and New Colleague'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('workspace-scenario-createPair')),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
@@ -853,7 +868,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('character editor reuses colleague and relationship setup', (
+  testWidgets('colleague setup reuses one screen for create and modify', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(956, 440);
@@ -864,35 +879,45 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: const CharacterEditorDesignScreen(),
+        home: const ColleagueDesignScreen(
+          initialScenario: WorkspaceScenarioDesignScreen.modify,
+        ),
       ),
     );
     await tester.pump();
-    expect(find.text('Modify Colleague · Details'), findsOneWidget);
-    expect(find.text('Alex'), findsOneWidget);
+    expect(find.text('Step 3 · Add one colleague'), findsOneWidget);
     expect(find.text('Observed Style'), findsOneWidget);
-    await tester.tap(find.widgetWithText(AppButton, 'Next'));
+    await tester.tap(find.byKey(const ValueKey('workspace-scenario-selector')));
+    await tester.pumpAndSettle();
+    expect(find.text('First Launch'), findsWidgets);
+    expect(find.text('Create'), findsOneWidget);
+    expect(find.text('Modify'), findsWidgets);
+    await tester.tap(find.byKey(const ValueKey('workspace-scenario-create')));
     await tester.pump();
     expect(
-      find.text('Modify Colleague · Relationship With You'),
+      find.byKey(const ValueKey('workspace-scenario-create')),
       findsOneWidget,
     );
-    expect(find.text('How You Work Together'), findsOneWidget);
-    expect(find.text('Relationship Score'), findsOneWidget);
-    expect(find.text('Modify Face'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-
+    await tester.tap(find.byKey(const ValueKey('workspace-field-3-0')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('workspace-editor-title')),
+      'Saved Colleague',
+    );
+    await tester.tap(find.widgetWithText(AppButton, 'OK'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: CharacterEditorDesignScreen(key: UniqueKey(), creating: true),
+        home: const ColleagueDesignScreen(
+          initialScenario: WorkspaceScenarioDesignScreen.modify,
+        ),
       ),
     );
     await tester.pump();
-    expect(find.text('Create Colleague · Details'), findsOneWidget);
-    await tester.tap(find.widgetWithText(AppButton, 'Next'));
-    await tester.pump();
-    expect(find.text('Create Face'), findsOneWidget);
+    expect(find.text('Saved Colleague'), findsOneWidget);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1160,8 +1185,10 @@ void main() {
     );
     expect(afterSetup.bottom, greaterThan(introductionNext.top));
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const WorkplaceDesignScreen()),
+    );
+    await tester.pump();
     expect(find.text('Step 1 · Describe your workplace'), findsOneWidget);
     expect(find.text('Current Situation'), findsOneWidget);
     expect(
@@ -1233,6 +1260,10 @@ void main() {
     expect(contractingPrompt.top, closeTo(fixedPromptTop, 0.1));
     expect(contractingAnalyze.top, closeTo(fixedPromptTop, 0.1));
     expect(contractingAnalyze.height, closeTo(contractingPrompt.height, 0.1));
+    expect(
+      tester.getRect(find.byKey(const ValueKey('workspace-prompt-1'))).height,
+      closeTo(contractingAnalyze.height, 0.1),
+    );
     await tester.pump(const Duration(milliseconds: 120));
     final contractedPromptHeight = tester
         .getRect(find.byKey(const ValueKey('workspace-prompt-visual-1')))
@@ -1243,6 +1274,10 @@ void main() {
           .getRect(find.byKey(const ValueKey('workspace-analyze-visual-1')))
           .height,
       closeTo(contractedPromptHeight, 3.1),
+    );
+    expect(
+      tester.getRect(find.byKey(const ValueKey('workspace-prompt-1'))).height,
+      closeTo(contractedPromptHeight, 0.1),
     );
     await tester.tap(find.byKey(const ValueKey('workspace-prompt-1')));
     await tester.pump(const Duration(milliseconds: 300));
@@ -1326,8 +1361,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.text('Travel services'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(AppButton, 'Next'));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const YourselfDesignScreen()),
+    );
+    await tester.pump();
     expect(find.text('Step 2 · Describe yourself at work'), findsOneWidget);
     expect(find.text('Example: Product Analyst'), findsOneWidget);
     expect(find.text('Sex'), findsOneWidget);
@@ -1364,8 +1401,10 @@ void main() {
     await tester.tap(find.text('Analyze'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
-    await tester.tap(find.widgetWithText(AppButton, 'Next'));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const ColleagueDesignScreen()),
+    );
+    await tester.pump();
     expect(find.text('Step 3 · Add one colleague'), findsOneWidget);
     expect(find.text('Next'), findsOneWidget);
     expect(find.text('How You Work Together'), findsNothing);
@@ -1375,8 +1414,13 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Cancel'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(AppButton, 'Next'));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const RelationshipSetupDesignScreen(),
+      ),
+    );
+    await tester.pump();
     expect(find.text('Step 4 · Describe your relationship'), findsOneWidget);
     expect(find.text('How You Work Together'), findsOneWidget);
     expect(find.text('Current Dynamic'), findsOneWidget);
@@ -1429,15 +1473,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: const WorkspaceSetupDesignScreen(),
-      ),
+      MaterialApp(theme: AppTheme.light, home: const WorkplaceDesignScreen()),
     );
     await tester.pump();
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 
@@ -1580,21 +1619,23 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('YOU'), findsOneWidget);
-      expect(find.text('Morgan'), findsOneWidget);
+      expect(find.text('You'), findsOneWidget);
+      expect(find.text('Alex'), findsOneWidget);
       expect(find.text('Advice'), findsOneWidget);
       expect(find.text('Events'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
+      expect(find.text('More'), findsOneWidget);
+      expect(find.text('ARCADE QUICK-LAUNCH'), findsNothing);
       expect(find.text('Home'), findsNothing);
       expect(find.text('POLITICS INTENSITY'), findsOneWidget);
-      expect(find.text('Morgan · Director'), findsOneWidget);
+      expect(find.text('Alex · Project Manager'), findsOneWidget);
       expect(
         find.byWidgetPredicate(
           (widget) =>
               widget is CustomPaint &&
               widget.painter is DesignAvatarHeadPainter,
         ),
-        findsNWidgets(6),
+        findsNWidgets(4),
       );
       for (final label in [
         'people',
@@ -1603,6 +1644,7 @@ void main() {
         'map',
         'arcade',
         'profile',
+        'more',
       ]) {
         final nav = tester.widget<InkWell>(
           find.byKey(ValueKey('home-nav-$label')),
@@ -1610,9 +1652,36 @@ void main() {
         expect(nav.borderRadius, BorderRadius.circular(999));
       }
 
-      await tester.tap(find.text('Avery'));
+      expect(
+        tester.getCenter(find.byKey(const ValueKey('home-nav-advice'))).dx,
+        closeTo(478, 1),
+      );
+      expect(
+        tester.getRect(find.byKey(const ValueKey('home-nav-people'))).left,
+        closeTo(12, 0.1),
+      );
+      expect(
+        tester.getRect(find.byKey(const ValueKey('home-nav-more'))).right,
+        closeTo(944, 0.1),
+      );
+      expect(
+        tester
+            .widget<AnimatedScale>(
+              find.byKey(const ValueKey('home-nav-scale-advice')),
+            )
+            .scale,
+        1.16,
+      );
+      expect(
+        find.byKey(
+          const ValueKey('people-network-silhouette-glow-Alex-active'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('Alex'));
       await tester.pump();
-      expect(find.text('Avery · Product Manager'), findsOneWidget);
+      expect(find.text('Alex · Project Manager'), findsWidgets);
       expect(find.byKey(const ValueKey('home-persona-popup')), findsOneWidget);
       expect(find.text('Open Full Profile'), findsOneWidget);
       expect(find.text('Major linked event'.toUpperCase()), findsOneWidget);
@@ -1698,6 +1767,44 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('advice input combines text image voice and analysis', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(956, 440);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const AdviceInputDesignScreen()),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('advice-camera')), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-gallery')), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-voice')), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-voice-language')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('advice-input-notes')),
+      'Alex disputed deadline ownership and copied our director.',
+    );
+    await tester.tap(find.widgetWithText(AppButton, 'Analyze'));
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('advice-processing-overlay')),
+      findsOneWidget,
+    );
+    await tester.pumpAndSettle();
+
+    final summary = tester.widget<TextField>(
+      find.byKey(const ValueKey('advice-analysis-0')),
+    );
+    expect(summary.controller!.text, contains('Situation'));
+    expect(find.text('Get Advice'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('home dashboard fits a compact landscape phone', (tester) async {
     tester.view.physicalSize = const Size(667, 375);
     tester.view.devicePixelRatio = 1;
@@ -1712,7 +1819,7 @@ void main() {
     expect(find.text('POLITICS INTENSITY'), findsOneWidget);
     expect(find.text('YOUR POLITICS SNAPSHOT'), findsOneWidget);
 
-    await tester.tap(find.text('Morgan'));
+    await tester.tap(find.text('Alex'));
     await tester.pump();
     expect(find.byKey(const ValueKey('home-persona-popup')), findsOneWidget);
     expect(tester.takeException(), isNull);

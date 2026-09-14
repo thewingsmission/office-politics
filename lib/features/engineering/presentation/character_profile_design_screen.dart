@@ -60,7 +60,7 @@ class _CharacterProfileDesignScreenState
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Complete recorded information and events · Temporary person selector',
+                      'Complete recorded information and related events',
                       style: TextStyle(
                         color: Color(0xFF5E8196),
                         fontSize: 8.5,
@@ -68,29 +68,42 @@ class _CharacterProfileDesignScreenState
                       ),
                     ),
                     const SizedBox(height: 7),
-                    Row(
-                      key: const ValueKey('character-profile-selector'),
-                      children: [
-                        for (
-                          var index = 0;
-                          index < profilePeopleDesignScreen.length;
-                          index++
-                        ) ...[
-                          Expanded(
-                            child: _ProfileSelectorButton(
-                              person: profilePeopleDesignScreen[index],
-                              selected: selectedIndex == index,
-                              onTap: () =>
-                                  setState(() => selectedIndex = index),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: _ProfileInformationPanel(person: person),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            width: 330,
+                            child: Row(
+                              key: const ValueKey('character-profile-selector'),
+                              children: [
+                                for (
+                                  var index = 0;
+                                  index < profilePeopleDesignScreen.length;
+                                  index++
+                                ) ...[
+                                  Expanded(
+                                    child: _ProfileSelectorButton(
+                                      person: profilePeopleDesignScreen[index],
+                                      selected: selectedIndex == index,
+                                      onTap: () =>
+                                          setState(() => selectedIndex = index),
+                                    ),
+                                  ),
+                                  if (index <
+                                      profilePeopleDesignScreen.length - 1)
+                                    const SizedBox(width: 8),
+                                ],
+                              ],
                             ),
                           ),
-                          if (index < profilePeopleDesignScreen.length - 1)
-                            const SizedBox(width: 8),
                         ],
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Expanded(child: _ProfileInformationPanel(person: person)),
                     const SizedBox(height: 5),
                     SizedBox(
                       height: 49,
@@ -105,7 +118,7 @@ class _CharacterProfileDesignScreenState
                                     label: 'Modify Relationship',
                                     leading: const Icon(Icons.hub_rounded),
                                     onPressed: () => context.go(
-                                      '/design/relationship-editor?case=modify-self-other',
+                                      '/design/relationship-setup?mode=modify',
                                     ),
                                   ),
                                 ),

@@ -5,7 +5,9 @@ import 'package:speech_to_text/speech_to_text.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../data/first_launch_design_draft.dart';
+import '../data/workspace_setup_design_draft.dart';
 import '../data/workspace_suggestion_service.dart';
+import 'design_avatar.dart';
 import 'first_launch_hero_panel.dart';
 import 'relationship_quality_bar.dart';
 
@@ -13,13 +15,28 @@ class WorkspaceSetupDesignScreen extends StatefulWidget {
   const WorkspaceSetupDesignScreen({
     super.key,
     this.suggestionService = const WorkspaceSuggestionService(),
+    this.initialStep = 0,
+    this.initialScenario = WorkspaceScenarioDesignScreen.firstLaunch,
   });
 
   final WorkspaceSuggestionService suggestionService;
+  final int initialStep;
+  final WorkspaceScenarioDesignScreen initialScenario;
 
   @override
   State<WorkspaceSetupDesignScreen> createState() =>
       _WorkspaceSetupDesignScreenState();
+}
+
+enum WorkspaceScenarioDesignScreen {
+  firstLaunch('First Launch'),
+  create('Create'),
+  modify('Modify'),
+  createPair('Create Pair'),
+  modifyPair('Modify Pair');
+
+  const WorkspaceScenarioDesignScreen(this.label);
+  final String label;
 }
 
 class _WorkspaceSetupDesignScreenState
@@ -48,7 +65,9 @@ class _WorkspaceSetupDesignScreenState
   );
   final SpeechToText speechDesignScreen = SpeechToText();
 
-  int stepDesignScreen = 0;
+  late int stepDesignScreen = widget.initialStep;
+  late WorkspaceScenarioDesignScreen scenarioDesignScreen =
+      widget.initialScenario;
   int? focusedPromptIndexDesignScreen;
   bool analyzingDesignScreen = false;
   bool speechInitializedDesignScreen = false;
@@ -69,10 +88,12 @@ class _WorkspaceSetupDesignScreenState
           });
         }),
     );
+    loadDraftDesignScreen();
   }
 
   @override
   void dispose() {
+    saveDraftDesignScreen();
     for (final controller in promptControllersDesignScreen) {
       controller.dispose();
     }
@@ -88,16 +109,61 @@ class _WorkspaceSetupDesignScreenState
     super.dispose();
   }
 
+  void loadDraftDesignScreen() {
+    for (
+      var section = 0;
+      section < fieldControllersDesignScreen.length;
+      section++
+    ) {
+      final savedSection = WorkspaceSetupDesignDraft.sections[section];
+      for (
+        var fieldIndex = 0;
+        fieldIndex < fieldControllersDesignScreen[section].length;
+        fieldIndex++
+      ) {
+        final controller = fieldControllersDesignScreen[section][fieldIndex];
+        final saved = savedSection[fieldIndex];
+        controller
+          ..title.text = saved.title
+          ..description.text = saved.description
+          ..reviewed = saved.reviewed
+          ..relationshipScore = saved.relationshipScore;
+      }
+    }
+  }
+
+  void saveDraftDesignScreen() {
+    for (
+      var section = 0;
+      section < fieldControllersDesignScreen.length;
+      section++
+    ) {
+      final savedSection = WorkspaceSetupDesignDraft.sections[section];
+      for (
+        var fieldIndex = 0;
+        fieldIndex < fieldControllersDesignScreen[section].length;
+        fieldIndex++
+      ) {
+        final controller = fieldControllersDesignScreen[section][fieldIndex];
+        final saved = savedSection[fieldIndex];
+        saved
+          ..title = controller.title.text
+          ..description = controller.description.text
+          ..reviewed = controller.reviewed
+          ..relationshipScore = controller.relationshipScore;
+      }
+    }
+  }
+
   void changeStepDesignScreen(int step) {
     if (speechDesignScreen.isListening) {
       speechDesignScreen.stop();
     }
-    setState(() {
-      stepDesignScreen = step.clamp(
-        0,
-        workspaceCollectionStepsDesignScreen.length,
-      );
-    });
+    saveDraftDesignScreen();
+    final target = step.clamp(0, workspaceCollectionStepsDesignScreen.length);
+    context.go(
+      workspaceRouteForStepDesignScreen(target, scenario: scenarioDesignScreen),
+    );
   }
 
   Future<void> toggleVoiceInputDesignScreen(int collectionIndex) async {
@@ -312,6 +378,8 @@ class _WorkspaceSetupDesignScreenState
                     flex: 5,
                     child: _WorkspaceHero(
                       compact: compactHeight,
+                      step: stepDesignScreen,
+                      scenario: scenarioDesignScreen,
                       onBack: () => context.go('/engineering'),
                     ),
                   ),
@@ -342,6 +410,13 @@ class _WorkspaceSetupDesignScreenState
                                 promptErrorsDesignScreen[collectionIndex],
                             status: statusesDesignScreen[collectionIndex],
                             analyzing: analyzingDesignScreen,
+                            scenario: scenarioDesignScreen,
+                            scenarioOptions:
+                                workspaceScenarioOptionsForStepDesignScreen(
+                                  stepDesignScreen,
+                                ),
+                            onScenarioChanged: (scenario) =>
+                                setState(() => scenarioDesignScreen = scenario),
                             listening:
                                 listeningCollectionIndexDesignScreen ==
                                 collectionIndex,
@@ -384,14 +459,29 @@ class _WorkspaceSetupDesignScreenState
                             onBack: () =>
                                 changeStepDesignScreen(stepDesignScreen - 1),
                             onNext: () {
+                              if (stepDesignScreen == 3 &&
+                                  scenarioDesignScreen !=
+                                      WorkspaceScenarioDesignScreen
+                                          .firstLaunch) {
+                                context.go(
+                                  scenarioDesignScreen ==
+                                          WorkspaceScenarioDesignScreen.create
+                                      ? '/design/face-lab?mode=colleague-create'
+                                      : '/design/face-lab?mode=modify-person&name=Alex',
+                                );
+                                return;
+                              }
                               if (stepDesignScreen <
                                   workspaceCollectionStepsDesignScreen.length) {
                                 changeStepDesignScreen(stepDesignScreen + 1);
                               } else {
-                                setState(() {
-                                  statusesDesignScreen[collectionIndex] =
-                                      'Initial setup preview complete';
-                                });
+                                context.go(
+                                  scenarioDesignScreen ==
+                                          WorkspaceScenarioDesignScreen
+                                              .firstLaunch
+                                      ? '/design/face-lab?mode=first-launch'
+                                      : '/design/people-network',
+                                );
                               }
                             },
                           ),
@@ -457,45 +547,215 @@ class _AnalysisLoadingOverlay extends StatelessWidget {
 }
 
 class _WorkspaceHero extends StatelessWidget {
-  const _WorkspaceHero({required this.compact, required this.onBack});
+  const _WorkspaceHero({
+    required this.compact,
+    required this.step,
+    required this.scenario,
+    required this.onBack,
+  });
 
   final bool compact;
+  final int step;
+  final WorkspaceScenarioDesignScreen scenario;
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     return FirstLaunchHeroPanel(
       onBack: onBack,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Spacer(),
-          Icon(
-            Icons.dashboard_customize_outlined,
-            color: const Color(0xFF3299D0),
-            size: compact ? 40 : 55,
+      child: step == 4
+          ? _RelationshipSetupHero(scenario: scenario, compact: compact)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Spacer(),
+                Icon(
+                  Icons.dashboard_customize_outlined,
+                  color: const Color(0xFF3299D0),
+                  size: compact ? 40 : 55,
+                ),
+                SizedBox(height: compact ? 4 : 8),
+                Text(
+                  'Start with a\nsmall office picture',
+                  style: TextStyle(
+                    color: const Color(0xFF174765),
+                    fontSize: compact ? 19 : 24,
+                    height: 1.06,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: compact ? 4 : 8),
+                Text(
+                  'Record only the essentials now. You can expand and refine everything later.',
+                  style: TextStyle(
+                    color: const Color(0xFF56819A),
+                    fontSize: compact ? 7.5 : 9,
+                    height: compact ? 1.25 : 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _RelationshipSetupHero extends StatelessWidget {
+  const _RelationshipSetupHero({required this.scenario, required this.compact});
+
+  final WorkspaceScenarioDesignScreen scenario;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final pair = switch (scenario) {
+      WorkspaceScenarioDesignScreen.createPair => (
+        'Maya',
+        'New Colleague',
+        'Operations lead · Calm and cautious',
+        'Persona will be added during creation',
+      ),
+      WorkspaceScenarioDesignScreen.modifyPair => (
+        'Maya',
+        'Jordan',
+        'Operations lead · Calm and cautious',
+        'Finance partner · Formal and evidence-focused',
+      ),
+      WorkspaceScenarioDesignScreen.create => (
+        'You',
+        'New Colleague',
+        'Product analyst · Cross-team coordinator',
+        'Persona will be added during creation',
+      ),
+      _ => (
+        'You',
+        'Alex',
+        'Product analyst · Cross-team coordinator',
+        'Project manager · Direct and deadline-focused',
+      ),
+    };
+    return Column(
+      key: const ValueKey('relationship-setup-pair-hero'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Spacer(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _RelationshipHeroPerson(
+              name: pair.$1,
+              avatar: pair.$1 == 'You'
+                  ? DesignAvatarDraft.self
+                  : const DesignAvatarData(
+                      skinColor: Color(0xFFAE6E48),
+                      hairColor: Color(0xFF342B2B),
+                      outfitColor: Color(0xFF4DA988),
+                      hair: 5,
+                    ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(
+                Icons.sync_alt_rounded,
+                color: Color(0xFF806DE2),
+                size: 24,
+              ),
+            ),
+            _RelationshipHeroPerson(
+              name: pair.$2,
+              avatar: pair.$2 == 'Alex' || pair.$2 == 'New Colleague'
+                  ? DesignAvatarDraft.firstColleague
+                  : const DesignAvatarData(
+                      skinColor: Color(0xFFFBD0AF),
+                      hairColor: Color(0xFF87563A),
+                      outfitColor: Color(0xFFD39B42),
+                      face: 3,
+                      hair: 1,
+                      accessory: 1,
+                    ),
+            ),
+          ],
+        ),
+        SizedBox(height: compact ? 3 : 7),
+        Text(
+          '${pair.$1} and ${pair.$2}',
+          style: TextStyle(
+            color: const Color(0xFF174765),
+            fontSize: compact ? 17 : 21,
+            fontWeight: FontWeight.w900,
           ),
-          SizedBox(height: compact ? 4 : 8),
+        ),
+        SizedBox(height: compact ? 3 : 7),
+        _RelationshipPersonaSummary(name: pair.$1, summary: pair.$3),
+        const SizedBox(height: 5),
+        _RelationshipPersonaSummary(name: pair.$2, summary: pair.$4),
+      ],
+    );
+  }
+}
+
+class _RelationshipHeroPerson extends StatelessWidget {
+  const _RelationshipHeroPerson({required this.name, required this.avatar});
+
+  final String name;
+  final DesignAvatarData avatar;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 70,
+      child: Column(
+        children: [
+          SizedBox(
+            width: 52,
+            height: 52,
+            child: CustomPaint(painter: DesignAvatarPainter(avatar)),
+          ),
           Text(
-            'Start with a\nsmall office picture',
-            style: TextStyle(
-              color: const Color(0xFF174765),
-              fontSize: compact ? 19 : 24,
-              height: 1.06,
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF245672),
+              fontSize: 7.5,
               fontWeight: FontWeight.w900,
             ),
           ),
-          SizedBox(height: compact ? 4 : 8),
-          Text(
-            'Record only the essentials now. You can expand and refine everything later.',
-            style: TextStyle(
-              color: const Color(0xFF56819A),
-              fontSize: compact ? 7.5 : 9,
-              height: compact ? 1.25 : 1.35,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _RelationshipPersonaSummary extends StatelessWidget {
+  const _RelationshipPersonaSummary({
+    required this.name,
+    required this.summary,
+  });
+
+  final String name;
+  final String summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF9EDCF5)),
+      ),
+      child: Text(
+        '$name · $summary',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFF4C748A),
+          fontSize: 7.5,
+          height: 1.2,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -686,6 +946,9 @@ class _WorkspaceCollectionView extends StatelessWidget {
     required this.promptError,
     required this.status,
     required this.analyzing,
+    required this.scenario,
+    required this.scenarioOptions,
+    required this.onScenarioChanged,
     required this.listening,
     required this.onPromptChanged,
     required this.onVoiceInput,
@@ -707,6 +970,9 @@ class _WorkspaceCollectionView extends StatelessWidget {
   final String? promptError;
   final String? status;
   final bool analyzing;
+  final WorkspaceScenarioDesignScreen scenario;
+  final List<WorkspaceScenarioDesignScreen> scenarioOptions;
+  final ValueChanged<WorkspaceScenarioDesignScreen> onScenarioChanged;
   final bool listening;
   final VoidCallback onPromptChanged;
   final VoidCallback onVoiceInput;
@@ -734,33 +1000,87 @@ class _WorkspaceCollectionView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                step.title,
-                style: TextStyle(
-                  color: const Color(0xFF173F5D),
-                  fontSize: compact ? 18 : 22,
-                  fontWeight: FontWeight.w900,
-                ),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    step.title,
+                    style: TextStyle(
+                      color: const Color(0xFF173F5D),
+                      fontSize: compact ? 18 : 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      step.instruction,
+                      maxLines: 2,
+                      style: const TextStyle(
+                        color: Color(0xFF5E8196),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (!compact) ...[
-                const SizedBox(height: 3),
-                Text(
-                  step.instruction,
-                  maxLines: 2,
-                  style: const TextStyle(
-                    color: Color(0xFF5E8196),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: PopupMenuButton<WorkspaceScenarioDesignScreen>(
+                key: const ValueKey('workspace-scenario-selector'),
+                tooltip: 'Temporary scenario selector',
+                initialValue: scenario,
+                onSelected: onScenarioChanged,
+                itemBuilder: (context) => [
+                  for (final option in scenarioOptions)
+                    PopupMenuItem(
+                      key: ValueKey('workspace-scenario-${option.name}'),
+                      value: option,
+                      child: Text(option.label),
+                    ),
+                ],
+                child: Container(
+                  width: 118,
+                  height: 27,
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDDF5FF),
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(color: const Color(0xFF806DE2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          scenario.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF356A84),
+                            fontSize: 6.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.expand_more_rounded,
+                        color: Color(0xFF725ED2),
+                        size: 13,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
         SizedBox(height: compact ? 4 : 8),
         TweenAnimationBuilder<double>(
@@ -779,9 +1099,9 @@ class _WorkspaceCollectionView extends StatelessWidget {
                       key: ValueKey('workspace-prompt-$stepNumber'),
                       controller: promptController,
                       focusNode: promptFocusNode,
-                      minLines: promptFocused ? null : (compact ? 1 : 2),
-                      maxLines: promptFocused ? null : 2,
-                      expands: promptFocused,
+                      minLines: null,
+                      maxLines: null,
+                      expands: true,
                       textAlignVertical: TextAlignVertical.top,
                       onTap: requestAppKeyboard,
                       onTapOutside: (_) => promptFocusNode.unfocus(),
@@ -1337,6 +1657,52 @@ String relationshipLabelForScoreDesignScreen(double score) {
   if (score <= 0.875) return 'Good';
   return 'Very Good';
 }
+
+String workspaceRouteForStepDesignScreen(
+  int step, {
+  WorkspaceScenarioDesignScreen scenario =
+      WorkspaceScenarioDesignScreen.firstLaunch,
+}) {
+  final route = switch (step) {
+    0 => '/design/workspace-setup',
+    1 => '/design/workplace',
+    2 => '/design/yourself',
+    3 => '/design/colleague',
+    _ => '/design/relationship-setup',
+  };
+  if (scenario == WorkspaceScenarioDesignScreen.firstLaunch || step == 0) {
+    return route;
+  }
+  final mode = switch (scenario) {
+    WorkspaceScenarioDesignScreen.firstLaunch => 'first-launch',
+    WorkspaceScenarioDesignScreen.create => 'create',
+    WorkspaceScenarioDesignScreen.modify => 'modify',
+    WorkspaceScenarioDesignScreen.createPair => 'create-pair',
+    WorkspaceScenarioDesignScreen.modifyPair => 'modify-pair',
+  };
+  return '$route?mode=$mode';
+}
+
+List<WorkspaceScenarioDesignScreen> workspaceScenarioOptionsForStepDesignScreen(
+  int step,
+) => switch (step) {
+  1 || 2 => const [
+    WorkspaceScenarioDesignScreen.firstLaunch,
+    WorkspaceScenarioDesignScreen.modify,
+  ],
+  3 => const [
+    WorkspaceScenarioDesignScreen.firstLaunch,
+    WorkspaceScenarioDesignScreen.create,
+    WorkspaceScenarioDesignScreen.modify,
+  ],
+  _ => const [
+    WorkspaceScenarioDesignScreen.firstLaunch,
+    WorkspaceScenarioDesignScreen.create,
+    WorkspaceScenarioDesignScreen.modify,
+    WorkspaceScenarioDesignScreen.createPair,
+    WorkspaceScenarioDesignScreen.modifyPair,
+  ],
+};
 
 const workspaceCollectionStepsDesignScreen = <_WorkspaceCollectionStep>[
   _WorkspaceCollectionStep(

@@ -202,6 +202,10 @@ const engineeringGroupsDesignScreen = <_EngineeringGroup>[
       'name-setup',
       'auth',
       'workspace-setup',
+      'workplace',
+      'yourself',
+      'colleague',
+      'relationship-setup',
       'face-lab',
     ],
   ),
@@ -211,10 +215,10 @@ const engineeringGroupsDesignScreen = <_EngineeringGroup>[
     icon: Icons.groups_2_outlined,
     screenIds: [
       'people-network',
-      'character-editor',
+      'colleague',
       'face-lab',
       'character-profile',
-      'relationship-editor',
+      'relationship-setup',
     ],
   ),
   _EngineeringGroup(
@@ -225,13 +229,10 @@ const engineeringGroupsDesignScreen = <_EngineeringGroup>[
   ),
   _EngineeringGroup(
     title: 'Coach',
-    subtitle: 'Advice, input tools, reply simulation, roleplay, and outcomes.',
+    subtitle: 'Unified advice input, reply simulation, roleplay, and outcomes.',
     icon: Icons.psychology_alt_outlined,
     screenIds: [
       'advice-input',
-      'image-capture',
-      'ocr-review',
-      'voice-input',
       'advice-result',
       'reply-simulator-input',
       'reply-simulator-result',
