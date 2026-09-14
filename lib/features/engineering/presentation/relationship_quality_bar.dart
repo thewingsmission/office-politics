@@ -1,5 +1,66 @@
 import 'package:flutter/material.dart';
 
+const relationshipQualityColors = <Color>[
+  Color(0xFF276F9E),
+  Color(0xFFA9DFF4),
+  Color(0xFFFFFFFF),
+  Color(0xFFDCCFFF),
+  Color(0xFF806DE2),
+];
+
+Color relationshipQualityColorForScore(double score) {
+  final position = score.clamp(0.0, 1.0) * 4;
+  final lower = position.floor().clamp(0, 4);
+  final upper = position.ceil().clamp(0, 4);
+  return Color.lerp(
+        relationshipQualityColors[lower],
+        relationshipQualityColors[upper],
+        position - lower,
+      ) ??
+      relationshipQualityColors[lower];
+}
+
+class RelationshipScorePill extends StatelessWidget {
+  const RelationshipScorePill({
+    super.key,
+    required this.label,
+    required this.score,
+  });
+
+  final String label;
+  final double score;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = relationshipQualityColorForScore(score);
+    final foreground = color.computeLuminance() > 0.68
+        ? const Color(0xFF245672)
+        : Colors.white;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: color, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF245672).withValues(alpha: 0.18),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: foreground,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
 class RelationshipQualityBar extends StatefulWidget {
   const RelationshipQualityBar({
     super.key,
@@ -116,13 +177,7 @@ class _RelationshipQualityBarState extends State<RelationshipQualityBar> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(99),
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF276F9E),
-                            Color(0xFFA9DFF4),
-                            Color(0xFFFFFFFF),
-                            Color(0xFFDCCFFF),
-                            Color(0xFF806DE2),
-                          ],
+                          colors: relationshipQualityColors,
                         ),
                         boxShadow: [
                           BoxShadow(

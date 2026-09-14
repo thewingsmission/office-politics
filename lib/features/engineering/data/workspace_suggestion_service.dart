@@ -98,6 +98,10 @@ class WorkspaceSuggestionService {
   }
 }
 
+List<WorkspaceFieldSuggestion> workspacePreviewSuggestions(
+  WorkspaceSetupSection section,
+) => _previewSuggestions(section);
+
 String _functionErrorMessage(int status) {
   return switch (status) {
     0 =>

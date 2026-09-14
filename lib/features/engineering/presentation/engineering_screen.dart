@@ -54,7 +54,7 @@ class _EngineeringScreenState extends State<EngineeringScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(28, 5, 28, 25),
                 sliver: SliverGrid.builder(
-                  itemCount: group.screenIds.length,
+                  itemCount: group.entries.length,
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 190,
                     mainAxisSpacing: 28,
@@ -62,18 +62,23 @@ class _EngineeringScreenState extends State<EngineeringScreen> {
                     mainAxisExtent: 72,
                   ),
                   itemBuilder: (context, index) {
+                    final entry = group.entries[index];
                     final definition = designScreenDefinitionById(
-                      group.screenIds[index],
+                      entry.screenId,
                     )!;
                     return EngineeringDesignButton(
                       definition: definition,
+                      displayName: entry.displayName,
                       onPressed: () {
                         final firstLaunchAvatar =
                             group.title == 'First Launch' &&
                             definition.id == 'face-lab';
-                        context.go(
-                          '/design/${definition.id}${firstLaunchAvatar ? '?mode=first-launch' : ''}',
-                        );
+                        final mode = entry.mode == null
+                            ? firstLaunchAvatar
+                                  ? '?mode=first-launch'
+                                  : ''
+                            : '?mode=${entry.mode}';
+                        context.go('/design/${definition.id}$mode');
                       },
                     );
                   },
@@ -183,6 +188,52 @@ class _EngineeringGroup {
   final String subtitle;
   final IconData icon;
   final List<String> screenIds;
+
+  List<_EngineeringScreenEntry> get entries {
+    if (title != 'People & Relationships') {
+      return [
+        for (final screenId in screenIds)
+          _EngineeringScreenEntry(screenId: screenId),
+      ];
+    }
+    return const [
+      _EngineeringScreenEntry(screenId: 'people-network'),
+      _EngineeringScreenEntry(
+        screenId: 'colleague',
+        mode: 'create',
+        displayName: 'Create Colleague',
+      ),
+      _EngineeringScreenEntry(
+        screenId: 'colleague',
+        mode: 'modify',
+        displayName: 'Modify Colleague',
+      ),
+      _EngineeringScreenEntry(screenId: 'face-lab'),
+      _EngineeringScreenEntry(screenId: 'character-profile'),
+      _EngineeringScreenEntry(
+        screenId: 'relationship-setup',
+        mode: 'create',
+        displayName: 'Create Relationship',
+      ),
+      _EngineeringScreenEntry(
+        screenId: 'relationship-setup',
+        mode: 'modify',
+        displayName: 'Modify Relationship',
+      ),
+    ];
+  }
+}
+
+class _EngineeringScreenEntry {
+  const _EngineeringScreenEntry({
+    required this.screenId,
+    this.mode,
+    this.displayName,
+  });
+
+  final String screenId;
+  final String? mode;
+  final String? displayName;
 }
 
 const engineeringGroupsDesignScreen = <_EngineeringGroup>[
@@ -296,10 +347,14 @@ class EngineeringDesignButton extends StatefulWidget {
     super.key,
     required this.definition,
     required this.onPressed,
+    this.displayName,
   });
 
   final DesignScreenDefinition definition;
   final VoidCallback onPressed;
+  final String? displayName;
+
+  String get resolvedDisplayName => displayName ?? definition.displayName;
 
   @override
   State<EngineeringDesignButton> createState() =>
@@ -352,7 +407,7 @@ class _EngineeringDesignButtonState extends State<EngineeringDesignButton> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        widget.definition.displayName,
+                        widget.resolvedDisplayName,
                         style: const TextStyle(
                           color: Color(0xFF143D5B),
                           fontSize: 18,
@@ -517,7 +572,7 @@ class _EngineeringDesignButtonState extends State<EngineeringDesignButton> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  widget.definition.displayName,
+                                  widget.resolvedDisplayName,
                                   maxLines: 2,
                                   softWrap: true,
                                   overflow: TextOverflow.visible,

@@ -135,7 +135,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           if (designScreenId == 'character-profile') {
             return CharacterProfileDesignScreen(
-              initialPerson: state.uri.queryParameters['person'] ?? 'You',
+              initialPerson: state.uri.queryParameters['person'],
             );
           }
           if (designScreenId == 'event-timeline') {

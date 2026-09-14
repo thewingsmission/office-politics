@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +10,8 @@ import 'design_avatar.dart';
 import 'first_launch_hero_panel.dart';
 import 'relationship_quality_bar.dart';
 
+const _connectionGrowthDurationDesignScreen = Duration(milliseconds: 300);
+
 class PeopleNetworkDesignScreen extends StatefulWidget {
   const PeopleNetworkDesignScreen({super.key});
 
@@ -19,13 +21,15 @@ class PeopleNetworkDesignScreen extends StatefulWidget {
 }
 
 class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final GlobalKey sceneKeyDesignScreen = GlobalKey();
   final List<GlobalKey> actorKeysDesignScreen = List<GlobalKey>.generate(
     peopleNetworkPeopleDesignScreen.length,
     (_) => GlobalKey(),
   );
   late final AnimationController motionDesignScreen;
+  late final AnimationController connectionGrowthDesignScreen;
+  late final Listenable sceneAnimationDesignScreen;
 
   Size sceneSizeDesignScreen = Size.zero;
   int? selectedPersonDesignScreen;
@@ -34,9 +38,8 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
   int? pressedPersonDesignScreen;
   int? hoverTargetDesignScreen;
   Offset? dragPointDesignScreen;
-  Offset? hoverAnchorDesignScreen;
   bool relationshipTargetReadyDesignScreen = false;
-  Timer? targetHoldTimerDesignScreen;
+
   @override
   void initState() {
     super.initState();
@@ -44,11 +47,23 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat();
+    connectionGrowthDesignScreen =
+        AnimationController(
+          vsync: this,
+          duration: _connectionGrowthDurationDesignScreen,
+        )..addStatusListener((status) {
+          if (!mounted || status != AnimationStatus.completed) return;
+          setState(() => relationshipTargetReadyDesignScreen = true);
+        });
+    sceneAnimationDesignScreen = Listenable.merge([
+      motionDesignScreen,
+      connectionGrowthDesignScreen,
+    ]);
   }
 
   @override
   void dispose() {
-    targetHoldTimerDesignScreen?.cancel();
+    connectionGrowthDesignScreen.dispose();
     motionDesignScreen.dispose();
     super.dispose();
   }
@@ -60,7 +75,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
   }
 
   void selectPersonDesignScreen(int index) {
-    targetHoldTimerDesignScreen?.cancel();
+    connectionGrowthDesignScreen.reset();
     setState(() {
       selectedPersonDesignScreen = index;
       selectedRelationshipDesignScreen = null;
@@ -78,12 +93,11 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
   }
 
   void startRelationshipDragDesignScreen(int source, Offset globalPosition) {
-    targetHoldTimerDesignScreen?.cancel();
+    connectionGrowthDesignScreen.reset();
     setState(() {
       dragSourceDesignScreen = source;
       dragPointDesignScreen = localPositionDesignScreen(globalPosition);
       hoverTargetDesignScreen = null;
-      hoverAnchorDesignScreen = null;
       relationshipTargetReadyDesignScreen = false;
     });
   }
@@ -116,22 +130,13 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
     if (dragSourceDesignScreen == null || sceneSizeDesignScreen.isEmpty) return;
     final local = localPositionDesignScreen(globalPosition);
     final target = relationshipTargetAtDesignScreen(globalPosition);
-    final movedInsideTarget =
-        hoverAnchorDesignScreen != null &&
-        (hoverAnchorDesignScreen! - local).distance > 4;
-    if (target != hoverTargetDesignScreen || movedInsideTarget) {
-      targetHoldTimerDesignScreen?.cancel();
+    if (target != hoverTargetDesignScreen) {
       hoverTargetDesignScreen = target;
-      hoverAnchorDesignScreen = target == null ? null : local;
       relationshipTargetReadyDesignScreen = false;
       if (target != null) {
-        targetHoldTimerDesignScreen = Timer(
-          const Duration(milliseconds: 300),
-          () {
-            if (!mounted || hoverTargetDesignScreen != target) return;
-            setState(() => relationshipTargetReadyDesignScreen = true);
-          },
-        );
+        connectionGrowthDesignScreen.forward(from: 0);
+      } else {
+        connectionGrowthDesignScreen.reset();
       }
     }
     setState(() => dragPointDesignScreen = local);
@@ -146,27 +151,27 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
       dragSourceDesignScreen = null;
       pressedPersonDesignScreen = null;
       hoverTargetDesignScreen = null;
-      hoverAnchorDesignScreen = null;
       relationshipTargetReadyDesignScreen = false;
       dragPointDesignScreen = null;
     });
+    connectionGrowthDesignScreen.reset();
   }
 
-  void endRelationshipDragDesignScreen(Offset globalPosition) {
-    targetHoldTimerDesignScreen?.cancel();
-    final target = relationshipTargetAtDesignScreen(globalPosition);
-    if (dragSourceDesignScreen == null) return;
-    if (target != null &&
-        target == hoverTargetDesignScreen &&
-        relationshipTargetReadyDesignScreen) {
+  void endRelationshipDragDesignScreen() {
+    final source = dragSourceDesignScreen;
+    final target = hoverTargetDesignScreen;
+    if (source == null) return;
+    if (target != null && relationshipTargetReadyDesignScreen) {
       completeRelationshipDesignScreen(target);
       return;
     }
+    connectionGrowthDesignScreen.reset();
     setState(() {
+      selectedPersonDesignScreen = source;
+      selectedRelationshipDesignScreen = null;
       dragSourceDesignScreen = null;
       pressedPersonDesignScreen = null;
       hoverTargetDesignScreen = null;
-      hoverAnchorDesignScreen = null;
       relationshipTargetReadyDesignScreen = false;
       dragPointDesignScreen = null;
     });
@@ -223,7 +228,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                           ),
                           SizedBox(height: 3),
                           Text(
-                            'Tap a person for their persona • Hold, drag, hold over another person, then release to view their relationship',
+                            'Tap a person for their persona • Drag immediately to another person, hold for 0.3 seconds, then release',
                             style: TextStyle(
                               color: Color(0xFF5E8196),
                               fontSize: 9,
@@ -239,7 +244,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                         builder: (context, constraints) {
                           sceneSizeDesignScreen = constraints.biggest;
                           return AnimatedBuilder(
-                            animation: motionDesignScreen,
+                            animation: sceneAnimationDesignScreen,
                             builder: (context, _) {
                               final positions =
                                   collisionSafePeoplePositionsDesignScreen(
@@ -279,6 +284,18 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                               from:
                                                   positions[dragSourceDesignScreen!],
                                               to: dragPointDesignScreen!,
+                                              sourceColor:
+                                                  peopleNetworkPeopleDesignScreen[dragSourceDesignScreen!]
+                                                      .shirtColor,
+                                              targetColor:
+                                                  hoverTargetDesignScreen ==
+                                                      null
+                                                  ? null
+                                                  : peopleNetworkPeopleDesignScreen[hoverTargetDesignScreen!]
+                                                        .shirtColor,
+                                              connectionProgress:
+                                                  connectionGrowthDesignScreen
+                                                      .value,
                                               ready:
                                                   relationshipTargetReadyDesignScreen,
                                               pulse: motionDesignScreen.value,
@@ -364,7 +381,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SizedBox(
-                                      width: 165,
+                                      width: 210,
                                       child: AppButton(
                                         label: 'View Full Profile',
                                         leading: const Icon(
@@ -382,7 +399,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                     ),
                                     const SizedBox(width: 8),
                                     SizedBox(
-                                      width: 165,
+                                      width: 210,
                                       child: AppButton(
                                         label: 'Modify Persona',
                                         onPressed: () => context.go(
@@ -393,7 +410,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                   ],
                                 )
                               : SizedBox(
-                                  width: 165,
+                                  width: 210,
                                   child: AppButton(
                                     label:
                                         selectedRelationshipDesignScreen != null
@@ -404,7 +421,7 @@ class _PeopleNetworkDesignScreenState extends State<PeopleNetworkDesignScreen>
                                         ? const Icon(
                                             Icons.person_add_alt_1_rounded,
                                           )
-                                        : null,
+                                        : const Icon(Icons.hub_rounded),
                                     onPressed: () {
                                       final relationship =
                                           selectedRelationshipDesignScreen;
@@ -469,7 +486,7 @@ class _PeopleNetworkGuide extends StatelessWidget {
         ),
         SizedBox(height: 8),
         Text(
-          'Tap a character to review the information recorded about them. To inspect a relationship, hold one character for 0.3 seconds, drag onto another, keep still for 0.3 seconds, then release on that character.',
+          'Tap or hold and release a character to review their information. To inspect a relationship, drag immediately onto another character, hold there for 0.3 seconds, then release.',
           style: TextStyle(
             color: Color(0xFF56819A),
             fontSize: 9,
@@ -523,7 +540,7 @@ class _PersonaPanel extends StatelessWidget {
                 height: 118,
                 child: CustomPaint(
                   key: const ValueKey('people-network-hexagon-chart'),
-                  painter: _PersonaHexagonPainter(
+                  painter: PersonaHexagonPainterDesignScreen(
                     values: person.personaMetrics,
                     color: person.shirtColor,
                   ),
@@ -569,8 +586,11 @@ class _PersonaAvatar extends StatelessWidget {
   }
 }
 
-class _PersonaHexagonPainter extends CustomPainter {
-  const _PersonaHexagonPainter({required this.values, required this.color});
+class PersonaHexagonPainterDesignScreen extends CustomPainter {
+  const PersonaHexagonPainterDesignScreen({
+    required this.values,
+    required this.color,
+  });
 
   final List<double> values;
   final Color color;
@@ -664,7 +684,7 @@ class _PersonaHexagonPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PersonaHexagonPainter oldDelegate) =>
+  bool shouldRepaint(covariant PersonaHexagonPainterDesignScreen oldDelegate) =>
       values != oldDelegate.values || color != oldDelegate.color;
 }
 
@@ -837,103 +857,104 @@ class NetworkMovingPersonDesignScreen extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<Offset> onDragStart;
   final ValueChanged<Offset> onDragUpdate;
-  final ValueChanged<Offset> onDragEnd;
+  final VoidCallback onDragEnd;
 
   @override
   Widget build(BuildContext context) {
     final stride = sin(motion * pi * 8 + person.phase);
     final idle = sin(motion * pi * 4 + person.phase);
     return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 300),
+      duration: _connectionGrowthDurationDesignScreen,
       curve: Curves.easeOutCubic,
       tween: Tween(end: connectionSelected || selected ? 1 : 0),
-      builder: (context, glow, _) => Container(
-        key: ValueKey('people-network-person-glow-${person.name}'),
-        child: Listener(
-          onPointerDown: (_) => onPressStart(),
-          onPointerUp: (_) => onPressEnd(),
-          onPointerCancel: (_) => onPressEnd(),
-          child: RawGestureDetector(
-            behavior: HitTestBehavior.opaque,
-            gestures: {
-              TapGestureRecognizer:
-                  GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
-                    TapGestureRecognizer.new,
-                    (recognizer) => recognizer.onTap = onTap,
-                  ),
-              LongPressGestureRecognizer:
-                  GestureRecognizerFactoryWithHandlers<
-                    LongPressGestureRecognizer
-                  >(
-                    () => LongPressGestureRecognizer(
-                      duration: const Duration(milliseconds: 300),
+      builder: (context, glow, _) {
+        final pulsingGlow = glow >= 0.999
+            ? 0.82 + sin(motion * pi * 8) * 0.18
+            : glow;
+        return Container(
+          key: ValueKey('people-network-person-glow-${person.name}'),
+          child: Listener(
+            onPointerDown: (_) => onPressStart(),
+            onPointerUp: (_) => onPressEnd(),
+            onPointerCancel: (_) => onPressEnd(),
+            child: RawGestureDetector(
+              behavior: HitTestBehavior.opaque,
+              gestures: {
+                TapGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+                      TapGestureRecognizer.new,
+                      (recognizer) => recognizer.onTap = onTap,
                     ),
-                    (recognizer) {
-                      recognizer.onLongPressStart = (details) =>
-                          onDragStart(details.globalPosition);
-                      recognizer.onLongPressMoveUpdate = (details) =>
-                          onDragUpdate(details.globalPosition);
-                      recognizer.onLongPressEnd = (details) =>
-                          onDragEnd(details.globalPosition);
-                    },
-                  ),
-            },
-            child: SizedBox(
-              width: 70,
-              height: 100,
-              child: Column(
-                children: [
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 68),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
+                PanGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<PanGestureRecognizer>(
+                      PanGestureRecognizer.new,
+                      (recognizer) {
+                        recognizer.onStart = (details) =>
+                            onDragStart(details.globalPosition);
+                        recognizer.onUpdate = (details) =>
+                            onDragUpdate(details.globalPosition);
+                        recognizer.onEnd = (_) => onDragEnd();
+                        recognizer.onCancel = onDragEnd;
+                      },
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: selected
-                            ? const Color(0xFF8777E9)
-                            : const Color(0xFF8BCFEA),
-                        width: selected ? 2 : 1,
+              },
+              child: SizedBox(
+                width: 70,
+                height: 100,
+                child: Column(
+                  children: [
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 68),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: selected
+                              ? const Color(0xFF8777E9)
+                              : const Color(0xFF8BCFEA),
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      child: Text(
+                        person.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF245672),
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      person.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF245672),
-                        fontSize: 8,
-                        fontWeight: FontWeight.w900,
+                    const SizedBox(height: 3),
+                    Expanded(
+                      child: Transform.translate(
+                        offset: Offset(0, idle.abs() * -2),
+                        child: _FrontFacingBody(
+                          person: person,
+                          stride: stride,
+                          idle: idle,
+                          glow: pulsingGlow,
+                          headInnerGlowScale: headInnerGlowScale,
+                          headOuterGlowScale: headOuterGlowScale,
+                          headOuterGlowOpacity: headOuterGlowOpacity,
+                          bodyInnerGlowScale: bodyInnerGlowScale,
+                          bodyOuterGlowScale: bodyOuterGlowScale,
+                          bodyOuterGlowOpacity: bodyOuterGlowOpacity,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Expanded(
-                    child: Transform.translate(
-                      offset: Offset(0, idle.abs() * -2),
-                      child: _FrontFacingBody(
-                        person: person,
-                        stride: stride,
-                        idle: idle,
-                        glow: glow,
-                        headInnerGlowScale: headInnerGlowScale,
-                        headOuterGlowScale: headOuterGlowScale,
-                        headOuterGlowOpacity: headOuterGlowOpacity,
-                        bodyInnerGlowScale: bodyInnerGlowScale,
-                        bodyOuterGlowScale: bodyOuterGlowScale,
-                        bodyOuterGlowOpacity: bodyOuterGlowOpacity,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -1224,31 +1245,39 @@ class _RelationshipDragPainter extends CustomPainter {
   const _RelationshipDragPainter({
     required this.from,
     required this.to,
+    required this.sourceColor,
+    required this.targetColor,
+    required this.connectionProgress,
     required this.ready,
     required this.pulse,
   });
 
   final Offset from;
   final Offset to;
+  final Color sourceColor;
+  final Color? targetColor;
+  final double connectionProgress;
   final bool ready;
   final double pulse;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final destinationColor = targetColor ?? sourceColor;
     if (ready) {
       final pulseStrength = 0.5 + sin(pulse * pi * 4) * 0.5;
       canvas.drawLine(
         from,
         to,
         Paint()
-          ..color = const Color(
-            0xFF65C5ED,
-          ).withValues(alpha: 0.22 + pulseStrength * 0.34)
-          ..strokeWidth = 4 + pulseStrength * 2
+          ..shader = ui.Gradient.linear(from, to, [
+            sourceColor.withValues(alpha: 0.2 + pulseStrength * 0.35),
+            destinationColor.withValues(alpha: 0.2 + pulseStrength * 0.35),
+          ])
+          ..strokeWidth = 5 + pulseStrength * 3
           ..strokeCap = StrokeCap.round
           ..maskFilter = MaskFilter.blur(
             BlurStyle.normal,
-            2 + pulseStrength * 2,
+            3 + pulseStrength * 3,
           ),
       );
     }
@@ -1256,8 +1285,10 @@ class _RelationshipDragPainter extends CustomPainter {
       from,
       to,
       Paint()
-        ..color = ready ? const Color(0xFF238BC5) : const Color(0xFFA9DFF4)
-        ..strokeWidth = ready ? 2.5 : 2
+        ..shader = ui.Gradient.linear(from, to, [sourceColor, destinationColor])
+        ..strokeWidth = targetColor == null
+            ? 2
+            : 2 + connectionProgress.clamp(0, 1) * 2
         ..strokeCap = StrokeCap.round,
     );
   }
@@ -1266,6 +1297,9 @@ class _RelationshipDragPainter extends CustomPainter {
   bool shouldRepaint(covariant _RelationshipDragPainter oldDelegate) =>
       from != oldDelegate.from ||
       to != oldDelegate.to ||
+      sourceColor != oldDelegate.sourceColor ||
+      targetColor != oldDelegate.targetColor ||
+      connectionProgress != oldDelegate.connectionProgress ||
       ready != oldDelegate.ready ||
       pulse != oldDelegate.pulse;
 }

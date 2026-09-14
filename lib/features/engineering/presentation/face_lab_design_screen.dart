@@ -190,267 +190,257 @@ class _FaceLabDesignScreenState extends State<FaceLabDesignScreen> {
     final compact = MediaQuery.sizeOf(context).height < 380;
     return Scaffold(
       backgroundColor: const Color(0xFFF4FAFF),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: FirstLaunchHeroPanel(
-                  onBack: () => context.go('/engineering'),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: _AvatarPreviewPanel(
-                          firstLaunch: firstLaunchModeDesignScreen,
-                          creatingColleague: creatingPersonDesignScreen,
-                          modifyingSelf: modifyingSelfDesignScreen,
-                          colleagueName: colleagueName,
-                          target: targetDesignScreen,
-                          configuration: configuration,
-                          compact: compact,
-                        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: FirstLaunchHeroPanel(
+                      onBack: () => context.go('/engineering'),
+                      child: _AvatarPreviewPanel(
+                        firstLaunch: firstLaunchModeDesignScreen,
+                        creatingColleague: creatingPersonDesignScreen,
+                        modifyingSelf: modifyingSelfDesignScreen,
+                        colleagueName: colleagueName,
+                        target: targetDesignScreen,
+                        configuration: configuration,
+                        compact: compact,
                       ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: _FaceLabModeTune(
-                          mode: previewModeDesignScreen,
-                          onChanged: changePreviewModeDesignScreen,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                flex: 7,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            firstLaunchModeDesignScreen
-                                ? 'Create two recognizable avatars'
-                                : modifyingSelfDesignScreen
-                                ? 'Modify your avatar'
-                                : creatingPersonDesignScreen
-                                ? 'Create $colleagueName’s avatar'
-                                : 'Modify $colleagueName’s avatar',
-                            style: TextStyle(
-                              color: const Color(0xFF173F5D),
-                              fontSize: compact ? 18 : 22,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          if (!compact) ...[
-                            const SizedBox(height: 3),
-                            Text(
-                              firstLaunchModeDesignScreen
-                                  ? 'Start with yourself, then create $colleagueName in your office.'
-                                  : modifyingSelfDesignScreen
-                                  ? 'Adjust your existing face, then save the changes.'
-                                  : creatingPersonDesignScreen
-                                  ? 'Create one recognizable face for this new colleague.'
-                                  : 'Adjust this colleague’s existing face, then save the changes.',
-                              style: const TextStyle(
-                                color: Color(0xFF5E8196),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: compact ? 5 : 9),
-                    if (firstLaunchModeDesignScreen)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppButton(
-                              key: const ValueKey('avatar-target-self'),
-                              label: selfSavedDesignScreen ? '✓  You' : 'You',
-                              selected: targetDesignScreen == 0,
-                              leading: const Icon(Icons.person_rounded),
-                              onPressed: () => selectTargetDesignScreen(0),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: AppButton(
-                              key: const ValueKey('avatar-target-colleague'),
-                              label: colleagueSavedDesignScreen
-                                  ? '✓  $colleagueName'
-                                  : colleagueName,
-                              selected: targetDesignScreen == 1,
-                              leading: const Icon(Icons.people_alt_rounded),
-                              onPressed:
-                                  selfSavedDesignScreen ||
-                                      targetDesignScreen == 1
-                                  ? () => selectTargetDesignScreen(1)
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      _ExistingCharacterBanner(
-                        colleagueName: modifyingSelfDesignScreen
-                            ? 'You'
-                            : colleagueName,
-                        creating: creatingPersonDesignScreen,
-                      ),
-                    SizedBox(height: compact ? 4 : 8),
-                    Expanded(
-                      child: GridView(
-                        padding: EdgeInsets.zero,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: compact ? 4 : 5,
-                          mainAxisExtent: compact ? 45 : 50,
-                        ),
-                        children: [
-                          _FeaturePicker(
-                            label: 'Face',
-                            options: avatarFaceOptionsDesignScreen,
-                            selected: configuration.face,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.face = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Skin tone',
-                            options: avatarSkinOptionsDesignScreen,
-                            selected: configuration.skin,
-                            colors: avatarSkinColorsDesignScreen,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.skin = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Hair',
-                            options: avatarHairOptionsDesignScreen,
-                            selected: configuration.hair,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.hair = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Hair color',
-                            options: avatarHairColorOptionsDesignScreen,
-                            selected: configuration.hairColor,
-                            colors: avatarHairColorsDesignScreen,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.hairColor = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Eyes',
-                            options: avatarEyeOptionsDesignScreen,
-                            selected: configuration.eyes,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.eyes = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Mouth',
-                            options: avatarMouthOptionsDesignScreen,
-                            selected: configuration.mouth,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.mouth = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Accessory',
-                            options: avatarAccessoryOptionsDesignScreen,
-                            selected: configuration.accessory,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.accessory = value,
-                            ),
-                          ),
-                          _FeaturePicker(
-                            label: 'Outfit color',
-                            options: avatarOutfitOptionsDesignScreen,
-                            selected: configuration.outfitColor,
-                            colors: avatarOutfitColorsDesignScreen,
-                            onSelected: (value) => updateAvatarDesignScreen(
-                              () => configuration.outfitColor = value,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: compact ? 3 : 6),
-                    Row(
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 7,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (statusDesignScreen != null ||
-                            !firstLaunchModeDesignScreen)
-                          Expanded(
-                            child: Text(
-                              statusDesignScreen ??
-                                  (creatingPersonDesignScreen
-                                      ? 'Creating one colleague avatar'
-                                      : modifyingSelfDesignScreen
-                                      ? 'Editing your existing avatar'
-                                      : 'Editing an existing character'),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFF337FA8),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          )
-                        else
-                          const Spacer(),
-                        FirstLaunchBottomAction(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 135,
-                                child: AppButton(
-                                  label: 'Randomize',
-                                  onPressed: randomizeDesignScreen,
+                              Text(
+                                firstLaunchModeDesignScreen
+                                    ? 'Create two recognizable avatars'
+                                    : modifyingSelfDesignScreen
+                                    ? 'Modify your avatar'
+                                    : creatingPersonDesignScreen
+                                    ? 'Create $colleagueName’s avatar'
+                                    : 'Modify $colleagueName’s avatar',
+                                style: TextStyle(
+                                  color: const Color(0xFF173F5D),
+                                  fontSize: compact ? 18 : 22,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                width: 200,
-                                child: AppButton(
-                                  label:
-                                      firstLaunchModeDesignScreen &&
-                                          targetDesignScreen == 0
-                                      ? 'Save & Create $colleagueName'
-                                      : firstLaunchModeDesignScreen
-                                      ? 'Finish Avatar Setup'
+                              if (!compact) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  firstLaunchModeDesignScreen
+                                      ? 'Start with yourself, then create $colleagueName in your office.'
+                                      : modifyingSelfDesignScreen
+                                      ? 'Adjust your existing face, then save the changes.'
                                       : creatingPersonDesignScreen
-                                      ? 'Create Colleague'
-                                      : 'Save Changes',
-                                  onPressed: saveDesignScreen,
+                                      ? 'Create one recognizable face for this new colleague.'
+                                      : 'Adjust this colleague’s existing face, then save the changes.',
+                                  style: const TextStyle(
+                                    color: Color(0xFF5E8196),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: compact ? 5 : 9),
+                        if (firstLaunchModeDesignScreen)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: AppButton(
+                                  key: const ValueKey('avatar-target-self'),
+                                  label: selfSavedDesignScreen
+                                      ? '✓  You'
+                                      : 'You',
+                                  selected: targetDesignScreen == 0,
+                                  leading: const Icon(Icons.person_rounded),
+                                  onPressed: () => selectTargetDesignScreen(0),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: AppButton(
+                                  key: const ValueKey(
+                                    'avatar-target-colleague',
+                                  ),
+                                  label: colleagueSavedDesignScreen
+                                      ? '✓  $colleagueName'
+                                      : colleagueName,
+                                  selected: targetDesignScreen == 1,
+                                  leading: const Icon(Icons.people_alt_rounded),
+                                  onPressed:
+                                      selfSavedDesignScreen ||
+                                          targetDesignScreen == 1
+                                      ? () => selectTargetDesignScreen(1)
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        SizedBox(height: compact ? 4 : 8),
+                        Expanded(
+                          child: GridView(
+                            padding: EdgeInsets.zero,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: compact ? 4 : 5,
+                                  mainAxisExtent: compact ? 45 : 50,
+                                ),
+                            children: [
+                              _FeaturePicker(
+                                label: 'Face',
+                                options: avatarFaceOptionsDesignScreen,
+                                selected: configuration.face,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.face = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Skin tone',
+                                options: avatarSkinOptionsDesignScreen,
+                                selected: configuration.skin,
+                                colors: avatarSkinColorsDesignScreen,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.skin = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Hair',
+                                options: avatarHairOptionsDesignScreen,
+                                selected: configuration.hair,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.hair = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Hair color',
+                                options: avatarHairColorOptionsDesignScreen,
+                                selected: configuration.hairColor,
+                                colors: avatarHairColorsDesignScreen,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.hairColor = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Eyes',
+                                options: avatarEyeOptionsDesignScreen,
+                                selected: configuration.eyes,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.eyes = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Mouth',
+                                options: avatarMouthOptionsDesignScreen,
+                                selected: configuration.mouth,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.mouth = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Accessory',
+                                options: avatarAccessoryOptionsDesignScreen,
+                                selected: configuration.accessory,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.accessory = value,
+                                ),
+                              ),
+                              _FeaturePicker(
+                                label: 'Outfit color',
+                                options: avatarOutfitOptionsDesignScreen,
+                                selected: configuration.outfitColor,
+                                colors: avatarOutfitColorsDesignScreen,
+                                onSelected: (value) => updateAvatarDesignScreen(
+                                  () => configuration.outfitColor = value,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        SizedBox(height: compact ? 3 : 6),
+                        Row(
+                          children: [
+                            if (statusDesignScreen != null)
+                              Expanded(
+                                child: Text(
+                                  statusDesignScreen!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF337FA8),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              )
+                            else
+                              const Spacer(),
+                            FirstLaunchBottomAction(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 135,
+                                    child: AppButton(
+                                      label: 'Randomize',
+                                      onPressed: randomizeDesignScreen,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SizedBox(
+                                    width: 200,
+                                    child: AppButton(
+                                      label:
+                                          firstLaunchModeDesignScreen &&
+                                              targetDesignScreen == 0
+                                          ? 'Save & Create $colleagueName'
+                                          : firstLaunchModeDesignScreen
+                                          ? 'Finish Avatar Setup'
+                                          : creatingPersonDesignScreen
+                                          ? 'Create Colleague'
+                                          : 'Save Changes',
+                                      onPressed: saveDesignScreen,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 16,
+            right: 16,
+            child: _FaceLabModeTune(
+              mode: previewModeDesignScreen,
+              onChanged: changePreviewModeDesignScreen,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -515,59 +505,6 @@ class _FaceLabModeTune extends StatelessWidget {
   }
 }
 
-class _ExistingCharacterBanner extends StatelessWidget {
-  const _ExistingCharacterBanner({
-    required this.colleagueName,
-    required this.creating,
-  });
-
-  final String colleagueName;
-  final bool creating;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 49,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: const Color(0xFF65C5ED), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            creating
-                ? Icons.person_add_alt_1_rounded
-                : Icons.person_pin_rounded,
-            color: const Color(0xFF3299D0),
-            size: 21,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            colleagueName,
-            style: const TextStyle(
-              color: Color(0xFF245672),
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            creating ? 'NEW COLLEAGUE' : 'EXISTING CHARACTER',
-            style: const TextStyle(
-              color: Color(0xFF6B8EA2),
-              fontSize: 8,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _AvatarPreviewPanel extends StatelessWidget {
   const _AvatarPreviewPanel({
     required this.firstLaunch,
@@ -618,23 +555,17 @@ class _AvatarPreviewPanel extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          self
-              ? modifyingSelf
-                    ? 'Modify your avatar'
-                    : 'Create your avatar'
-              : firstLaunch
-              ? 'Create $colleagueName’s avatar'
-              : creatingColleague
-              ? 'Create $colleagueName’s avatar'
-              : '$colleagueName’s avatar',
-          style: TextStyle(
-            color: const Color(0xFF174765),
-            fontSize: compact ? 18 : 22,
-            fontWeight: FontWeight.w900,
+        if (firstLaunch) ...[
+          Text(
+            self ? 'Create your avatar' : 'Create $colleagueName’s avatar',
+            style: TextStyle(
+              color: const Color(0xFF174765),
+              fontSize: compact ? 18 : 22,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-        ),
-        const SizedBox(height: 5),
+          const SizedBox(height: 5),
+        ],
         Text(
           self
               ? modifyingSelf

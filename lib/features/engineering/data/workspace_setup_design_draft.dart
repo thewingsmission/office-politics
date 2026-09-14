@@ -12,4 +12,16 @@ abstract final class WorkspaceSetupDesignDraft {
     List.generate(6, (_) => WorkspaceFieldDesignDraft()),
     List.generate(5, (_) => WorkspaceFieldDesignDraft()),
   ];
+
+  static void clear() {
+    for (final section in sections) {
+      for (final field in section) {
+        field
+          ..title = ''
+          ..description = ''
+          ..reviewed = false
+          ..relationshipScore = null;
+      }
+    }
+  }
 }

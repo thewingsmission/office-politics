@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,9 +8,9 @@ import 'design_avatar.dart';
 import 'first_launch_hero_panel.dart';
 
 class CharacterProfileDesignScreen extends StatefulWidget {
-  const CharacterProfileDesignScreen({super.key, this.initialPerson = 'You'});
+  const CharacterProfileDesignScreen({super.key, this.initialPerson});
 
-  final String initialPerson;
+  final String? initialPerson;
 
   @override
   State<CharacterProfileDesignScreen> createState() =>
@@ -17,13 +19,17 @@ class CharacterProfileDesignScreen extends StatefulWidget {
 
 class _CharacterProfileDesignScreenState
     extends State<CharacterProfileDesignScreen> {
-  late int selectedIndex = profilePeopleDesignScreen.indexWhere(
-    (person) => person.name == widget.initialPerson,
-  );
+  late int selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    final initialPerson = widget.initialPerson;
+    selectedIndex = initialPerson == null
+        ? math.Random().nextInt(profilePeopleDesignScreen.length)
+        : profilePeopleDesignScreen.indexWhere(
+            (person) => person.name == initialPerson,
+          );
     if (selectedIndex < 0) selectedIndex = 0;
   }
 
@@ -32,86 +38,54 @@ class _CharacterProfileDesignScreenState
     final person = profilePeopleDesignScreen[selectedIndex];
     return Scaffold(
       backgroundColor: const Color(0xFFF4FAFF),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: FirstLaunchHeroPanel(
-                  onBack: () => context.go('/design/people-network'),
-                  child: _ProfilePersonaPanel(person: person),
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                flex: 7,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Character Profile',
-                      style: TextStyle(
-                        color: Color(0xFF173F5D),
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: FirstLaunchHeroPanel(
+                      onBack: () => context.go('/design/people-network'),
+                      child: _ProfilePersonaPanel(person: person),
                     ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Complete recorded information and related events',
-                      style: TextStyle(
-                        color: Color(0xFF5E8196),
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: _ProfileInformationPanel(person: person),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 7,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Character Profile',
+                          style: TextStyle(
+                            color: Color(0xFF173F5D),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
                           ),
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            width: 330,
-                            child: Row(
-                              key: const ValueKey('character-profile-selector'),
-                              children: [
-                                for (
-                                  var index = 0;
-                                  index < profilePeopleDesignScreen.length;
-                                  index++
-                                ) ...[
-                                  Expanded(
-                                    child: _ProfileSelectorButton(
-                                      person: profilePeopleDesignScreen[index],
-                                      selected: selectedIndex == index,
-                                      onTap: () =>
-                                          setState(() => selectedIndex = index),
-                                    ),
-                                  ),
-                                  if (index <
-                                      profilePeopleDesignScreen.length - 1)
-                                    const SizedBox(width: 8),
-                                ],
-                              ],
-                            ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Personal information, relationships, and recent events',
+                          style: TextStyle(
+                            color: Color(0xFF5E8196),
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    SizedBox(
-                      height: 49,
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: person.isSelf
-                            ? const SizedBox.shrink()
-                            : SizedBox(
+                        ),
+                        const SizedBox(height: 7),
+                        Expanded(
+                          child: _ProfileInformationPanel(person: person),
+                        ),
+                        if (!person.isSelf) ...[
+                          const SizedBox(height: 5),
+                          SizedBox(
+                            height: 49,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: SizedBox(
                                 width: 185,
                                 child: FirstLaunchBottomAction(
                                   child: AppButton(
@@ -123,75 +97,93 @@ class _CharacterProfileDesignScreenState
                                   ),
                                 ),
                               ),
-                      ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _ProfileScenarioSelector(
+              selectedIndex: selectedIndex,
+              onSelected: (index) => setState(() => selectedIndex = index),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ProfileSelectorButton extends StatelessWidget {
-  const _ProfileSelectorButton({
-    required this.person,
-    required this.selected,
-    required this.onTap,
+class _ProfileScenarioSelector extends StatelessWidget {
+  const _ProfileScenarioSelector({
+    required this.selectedIndex,
+    required this.onSelected,
   });
 
-  final _ProfilePerson person;
-  final bool selected;
-  final VoidCallback onTap;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? const Color(0xFFDDF5FF) : Colors.white,
-      borderRadius: BorderRadius.circular(11),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(11),
-        child: Container(
-          height: 37,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(11),
-            border: Border.all(
-              color: selected
-                  ? const Color(0xFF806DE2)
-                  : const Color(0xFF65C5ED),
-              width: selected ? 2 : 1.5,
+    return PopupMenuButton<int>(
+      key: const ValueKey('character-profile-selector'),
+      initialValue: selectedIndex,
+      tooltip: 'Temporary character preview',
+      onSelected: onSelected,
+      itemBuilder: (context) => [
+        for (final entry in profilePeopleDesignScreen.indexed)
+          PopupMenuItem<int>(
+            key: ValueKey('character-profile-person-${entry.$1}'),
+            value: entry.$1,
+            child: Row(
+              children: [
+                Icon(
+                  entry.$2.isSelf ? Icons.person_rounded : Icons.badge_outlined,
+                  size: 17,
+                  color: entry.$2.avatar.outfitColor,
+                ),
+                const SizedBox(width: 8),
+                Text(entry.$2.name),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                person.isSelf ? Icons.person_rounded : Icons.badge_outlined,
-                size: 14,
-                color: selected
-                    ? const Color(0xFF725ED2)
-                    : const Color(0xFF318DB6),
+      ],
+      child: Container(
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(color: const Color(0xFF65C5ED), width: 1.5),
+          boxShadow: const [BoxShadow(color: Color(0x223299D0), blurRadius: 8)],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.tune_rounded, size: 16, color: Color(0xFF318DB6)),
+            SizedBox(width: 5),
+            Text(
+              'Character',
+              style: TextStyle(
+                color: Color(0xFF245672),
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
               ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    person.name,
-                    style: const TextStyle(
-                      color: Color(0xFF245672),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            SizedBox(width: 3),
+            Icon(
+              Icons.arrow_drop_down_rounded,
+              size: 17,
+              color: Color(0xFF318DB6),
+            ),
+          ],
         ),
       ),
     );
@@ -292,6 +284,17 @@ class _ProfilePersonaPanel extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(height: 9),
+          SizedBox(
+            height: 78,
+            child: _HistoryTrendChart(
+              title: 'PERSON METRIC HISTORY',
+              primaryLabel: 'Influence',
+              primaryValues: person.influenceHistory,
+              secondaryLabel: 'Political Risk',
+              secondaryValues: person.riskHistory,
+            ),
+          ),
         ],
       ),
     );
@@ -347,47 +350,93 @@ class _ProfileInformationPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return Column(
       key: ValueKey('character-profile-information-${person.name}'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _ProfileSection(
-            title: person.isSelf
-                ? 'Your Recorded Information'
-                : 'Colleague Information',
-            icon: Icons.assignment_ind_outlined,
-            entries: person.information,
+      children: [
+        Expanded(
+          flex: 4,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _ProfileAreaCard(
+                  key: const ValueKey('character-profile-personal-info'),
+                  title: 'Personal Information',
+                  icon: Icons.assignment_ind_outlined,
+                  child: _InformationList(entries: person.information),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: person.isSelf
+                    ? const _SelfRelationshipsPanel()
+                    : _ProfileAreaCard(
+                        key: const ValueKey(
+                          'character-profile-self-relationship',
+                        ),
+                        title: 'Relationship With You',
+                        icon: Icons.hub_rounded,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: _InformationList(
+                                entries: person.relationship,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            SizedBox(
+                              height: 55,
+                              child: _HistoryTrendChart(
+                                title: 'RELATIONSHIP SCORE HISTORY',
+                                primaryLabel: 'Score',
+                                primaryValues: person.relationshipHistory,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
           ),
-          if (!person.isSelf)
-            _ProfileSection(
-              title: 'Relationship With You',
-              icon: Icons.hub_rounded,
-              entries: person.relationship,
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          flex: 3,
+          child: _ProfileAreaCard(
+            key: const ValueKey('character-profile-recent-events'),
+            title: person.isSelf
+                ? 'Recent Events Involving You'
+                : 'Recent Events Involving ${person.name}',
+            icon: Icons.event_note_rounded,
+            child: _InformationList(
+              entries: [
+                for (final event in person.events)
+                  ('${event.$1} · ${event.$2}', event.$3),
+              ],
             ),
-          _EventSection(events: person.events),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _ProfileSection extends StatelessWidget {
-  const _ProfileSection({
+class _ProfileAreaCard extends StatelessWidget {
+  const _ProfileAreaCard({
+    super.key,
     required this.title,
     required this.icon,
-    required this.entries,
+    required this.child,
   });
 
   final String title;
   final IconData icon;
-  final List<(String, String)> entries;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -401,32 +450,266 @@ class _ProfileSection extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: const Color(0xFF3299D0)),
               const SizedBox(width: 6),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFF245672),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
+              Expanded(
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: const TextStyle(
+                      color: Color(0xFF245672),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 7),
-          Wrap(
-            spacing: 8,
-            runSpacing: 7,
-            children: [
-              for (final entry in entries)
-                SizedBox(
-                  width: 225,
-                  child: _InformationEntry(label: entry.$1, value: entry.$2),
-                ),
-            ],
-          ),
+          Expanded(child: child),
         ],
       ),
     );
   }
+}
+
+class _InformationList extends StatelessWidget {
+  const _InformationList({required this.entries});
+
+  final List<(String, String)> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      itemCount: entries.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 6),
+      itemBuilder: (context, index) =>
+          _InformationEntry(label: entries[index].$1, value: entries[index].$2),
+    );
+  }
+}
+
+class _SelfRelationshipsPanel extends StatelessWidget {
+  const _SelfRelationshipsPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileAreaCard(
+      key: const ValueKey('character-profile-ranked-relationships'),
+      title: 'Colleague Relationships',
+      icon: Icons.people_alt_outlined,
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: selfRelationshipsDesignScreen.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 6),
+        itemBuilder: (context, index) {
+          final relationship = selfRelationshipsDesignScreen[index];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${index + 1}. ${relationship.$1}',
+                      style: const TextStyle(
+                        color: Color(0xFF245672),
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    relationship.$2,
+                    style: const TextStyle(
+                      color: Color(0xFF725ED2),
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: relationship.$3,
+                  minHeight: 5,
+                  backgroundColor: const Color(0xFFDDF5FF),
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFF806DE2)),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _HistoryTrendChart extends StatelessWidget {
+  const _HistoryTrendChart({
+    required this.title,
+    required this.primaryLabel,
+    required this.primaryValues,
+    this.secondaryLabel,
+    this.secondaryValues,
+  });
+
+  final String title;
+  final String primaryLabel;
+  final List<double> primaryValues;
+  final String? secondaryLabel;
+  final List<double>? secondaryValues;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: ValueKey('profile-trend-${title.toLowerCase()}'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF318DB6),
+            fontSize: 7.5,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.35,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Expanded(
+          child: CustomPaint(
+            painter: _HistoryTrendPainter(
+              primaryValues: primaryValues,
+              secondaryValues: secondaryValues,
+            ),
+            child: const SizedBox.expand(),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            _TrendLegend(color: const Color(0xFF3299D0), label: primaryLabel),
+            if (secondaryLabel != null) ...[
+              const SizedBox(width: 8),
+              _TrendLegend(
+                color: const Color(0xFF806DE2),
+                label: secondaryLabel!,
+              ),
+            ],
+            const Spacer(),
+            const Text(
+              'Oldest → Latest',
+              style: TextStyle(
+                color: Color(0xFF7795A5),
+                fontSize: 6.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TrendLegend extends StatelessWidget {
+  const _TrendLegend({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 3,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF66899C),
+            fontSize: 6.5,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HistoryTrendPainter extends CustomPainter {
+  const _HistoryTrendPainter({
+    required this.primaryValues,
+    this.secondaryValues,
+  });
+
+  final List<double> primaryValues;
+  final List<double>? secondaryValues;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final chartRect = Rect.fromLTWH(2, 2, size.width - 4, size.height - 4);
+    final gridPaint = Paint()
+      ..color = const Color(0xFFD5ECF7)
+      ..strokeWidth = 1;
+    for (final fraction in [0.0, 0.5, 1.0]) {
+      final y = chartRect.bottom - chartRect.height * fraction;
+      canvas.drawLine(
+        Offset(chartRect.left, y),
+        Offset(chartRect.right, y),
+        gridPaint,
+      );
+    }
+    _drawSeries(canvas, chartRect, primaryValues, const Color(0xFF3299D0));
+    final secondary = secondaryValues;
+    if (secondary != null) {
+      _drawSeries(canvas, chartRect, secondary, const Color(0xFF806DE2));
+    }
+  }
+
+  void _drawSeries(Canvas canvas, Rect rect, List<double> values, Color color) {
+    if (values.isEmpty) return;
+    final path = Path();
+    for (var index = 0; index < values.length; index++) {
+      final x = values.length == 1
+          ? rect.center.dx
+          : rect.left + rect.width * index / (values.length - 1);
+      final y = rect.bottom - rect.height * values[index].clamp(0.0, 1.0);
+      if (index == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+      canvas.drawCircle(Offset(x, y), 2.2, Paint()..color = color);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HistoryTrendPainter oldDelegate) =>
+      oldDelegate.primaryValues != primaryValues ||
+      oldDelegate.secondaryValues != secondaryValues;
 }
 
 class _InformationEntry extends StatelessWidget {
@@ -458,23 +741,6 @@ class _InformationEntry extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _EventSection extends StatelessWidget {
-  const _EventSection({required this.events});
-
-  final List<(String, String, String)> events;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ProfileSection(
-      title: 'Related Events Added During Use',
-      icon: Icons.event_note_rounded,
-      entries: [
-        for (final event in events) ('${event.$1} · ${event.$2}', event.$3),
       ],
     );
   }
@@ -512,7 +778,34 @@ class _ProfilePerson {
     'Alex' => DesignAvatarDraft.firstColleague,
     _ => fallbackAvatar,
   };
+
+  List<double> get influenceHistory => switch (name) {
+    'You' => const [0.36, 0.41, 0.44, 0.48],
+    'Alex' => const [0.56, 0.61, 0.72, 0.68],
+    'Maya' => const [0.62, 0.67, 0.70, 0.74],
+    _ => const [0.49, 0.52, 0.55, 0.57],
+  };
+
+  List<double> get riskHistory => switch (name) {
+    'You' => const [0.28, 0.31, 0.42, 0.35],
+    'Alex' => const [0.38, 0.46, 0.70, 0.62],
+    'Maya' => const [0.34, 0.30, 0.31, 0.28],
+    _ => const [0.31, 0.38, 0.45, 0.42],
+  };
+
+  List<double> get relationshipHistory => switch (name) {
+    'Alex' => const [0.58, 0.50, 0.25, 0.31],
+    'Maya' => const [0.55, 0.62, 0.72, 0.78],
+    'Jordan' => const [0.46, 0.50, 0.48, 0.52],
+    _ => const [0.5],
+  };
 }
+
+const selfRelationshipsDesignScreen = <(String, String, double)>[
+  ('Maya', 'Good · 78', 0.78),
+  ('Jordan', 'Neutral · 52', 0.52),
+  ('Alex', 'Bad · 31', 0.31),
+];
 
 const profilePeopleDesignScreen = <_ProfilePerson>[
   _ProfilePerson(

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -64,6 +66,7 @@ class _WorkspaceSetupDesignScreenState
     null,
   );
   final SpeechToText speechDesignScreen = SpeechToText();
+  final Random previewRandomDesignScreen = Random();
 
   late int stepDesignScreen = widget.initialStep;
   late WorkspaceScenarioDesignScreen scenarioDesignScreen =
@@ -73,6 +76,7 @@ class _WorkspaceSetupDesignScreenState
   bool speechInitializedDesignScreen = false;
   int? listeningCollectionIndexDesignScreen;
   String dictationPrefixDesignScreen = '';
+  DateTime effectiveChangeDateDesignScreen = DateTime.now();
 
   @override
   void initState() {
@@ -89,6 +93,9 @@ class _WorkspaceSetupDesignScreenState
         }),
     );
     loadDraftDesignScreen();
+    if (isModifyScenarioDesignScreen(scenarioDesignScreen)) {
+      populateModifyPreviewDesignScreen();
+    }
   }
 
   @override
@@ -153,6 +160,65 @@ class _WorkspaceSetupDesignScreenState
           ..relationshipScore = controller.relationshipScore;
       }
     }
+  }
+
+  bool isModifyScenarioDesignScreen(WorkspaceScenarioDesignScreen scenario) =>
+      scenario == WorkspaceScenarioDesignScreen.modify ||
+      scenario == WorkspaceScenarioDesignScreen.modifyPair;
+
+  void populateModifyPreviewDesignScreen() {
+    if (stepDesignScreen < 1 ||
+        stepDesignScreen > workspaceCollectionStepsDesignScreen.length) {
+      return;
+    }
+    final collectionIndex = stepDesignScreen - 1;
+    final step = workspaceCollectionStepsDesignScreen[collectionIndex];
+    final previews = workspacePreviewSuggestions(step.section);
+    final controllers = fieldControllersDesignScreen[collectionIndex];
+    final reviewPrefilledFields = stepDesignScreen < 3;
+    for (var index = 0; index < controllers.length; index++) {
+      final controller = controllers[index];
+      final preview = previews[index];
+      if (controller.title.text.trim().isEmpty) {
+        controller.title.text = preview.title;
+      }
+      if (controller.description.text.trim().isEmpty) {
+        controller.description.text = preview.description;
+      }
+      controller.reviewed = reviewPrefilledFields;
+    }
+    final relationshipIndex = step.fields.indexWhere(
+      (field) => field.relationshipScore,
+    );
+    if (relationshipIndex >= 0) {
+      final score = previewRandomDesignScreen.nextInt(5) / 4;
+      controllers[relationshipIndex]
+        ..title.text = relationshipLabelForScoreDesignScreen(score)
+        ..description.clear()
+        ..relationshipScore = score
+        ..reviewed = reviewPrefilledFields;
+    }
+  }
+
+  void changeScenarioDesignScreen(WorkspaceScenarioDesignScreen scenario) {
+    setState(() {
+      scenarioDesignScreen = scenario;
+      if (isModifyScenarioDesignScreen(scenario)) {
+        populateModifyPreviewDesignScreen();
+      }
+    });
+  }
+
+  Future<void> selectEffectiveChangeDateDesignScreen() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: effectiveChangeDateDesignScreen,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      helpText: 'Select Change Date',
+    );
+    if (selected == null || !mounted) return;
+    setState(() => effectiveChangeDateDesignScreen = selected);
   }
 
   void changeStepDesignScreen(int step) {
@@ -396,6 +462,16 @@ class _WorkspaceSetupDesignScreenState
                             step:
                                 workspaceCollectionStepsDesignScreen[collectionIndex],
                             stepNumber: stepDesignScreen,
+                            scenario: scenarioDesignScreen,
+                            effectiveChangeDate:
+                                isModifyScenarioDesignScreen(
+                                      scenarioDesignScreen,
+                                    ) &&
+                                    stepDesignScreen >= 3
+                                ? effectiveChangeDateDesignScreen
+                                : null,
+                            onSelectEffectiveChangeDate:
+                                selectEffectiveChangeDateDesignScreen,
                             compact: compactHeight,
                             promptController:
                                 promptControllersDesignScreen[collectionIndex],
@@ -410,13 +486,6 @@ class _WorkspaceSetupDesignScreenState
                                 promptErrorsDesignScreen[collectionIndex],
                             status: statusesDesignScreen[collectionIndex],
                             analyzing: analyzingDesignScreen,
-                            scenario: scenarioDesignScreen,
-                            scenarioOptions:
-                                workspaceScenarioOptionsForStepDesignScreen(
-                                  stepDesignScreen,
-                                ),
-                            onScenarioChanged: (scenario) =>
-                                setState(() => scenarioDesignScreen = scenario),
                             listening:
                                 listeningCollectionIndexDesignScreen ==
                                 collectionIndex,
@@ -436,6 +505,25 @@ class _WorkspaceSetupDesignScreenState
                                   collectionIndex,
                                   fieldIndex,
                                 ),
+                            onToggleRelationshipReviewed: () {
+                              final fieldIndex =
+                                  workspaceCollectionStepsDesignScreen[collectionIndex]
+                                      .fields
+                                      .indexWhere(
+                                        (field) => field.relationshipScore,
+                                      );
+                              if (fieldIndex < 0) return;
+                              setState(() {
+                                final field =
+                                    fieldControllersDesignScreen[collectionIndex][fieldIndex];
+                                if (field.title.text.trim().isEmpty) {
+                                  field
+                                    ..title.text = 'Neutral'
+                                    ..relationshipScore = 0.5;
+                                }
+                                field.reviewed = !field.reviewed;
+                              });
+                            },
                             onRelationshipScoreChanged: (score) {
                               final fieldIndex =
                                   workspaceCollectionStepsDesignScreen[collectionIndex]
@@ -490,6 +578,18 @@ class _WorkspaceSetupDesignScreenState
               ),
             ),
           ),
+          if (stepDesignScreen > 0)
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + 16,
+              right: 16,
+              child: _WorkspaceScenarioSelector(
+                scenario: scenarioDesignScreen,
+                options: workspaceScenarioOptionsForStepDesignScreen(
+                  stepDesignScreen,
+                ),
+                onChanged: changeScenarioDesignScreen,
+              ),
+            ),
           if (analyzingDesignScreen) const _AnalysisLoadingOverlay(),
         ],
       ),
@@ -611,9 +711,9 @@ class _RelationshipSetupHero extends StatelessWidget {
     final pair = switch (scenario) {
       WorkspaceScenarioDesignScreen.createPair => (
         'Maya',
-        'New Colleague',
+        'Jordan',
         'Operations lead · Calm and cautious',
-        'Persona will be added during creation',
+        'Finance partner · Formal and evidence-focused',
       ),
       WorkspaceScenarioDesignScreen.modifyPair => (
         'Maya',
@@ -623,9 +723,9 @@ class _RelationshipSetupHero extends StatelessWidget {
       ),
       WorkspaceScenarioDesignScreen.create => (
         'You',
-        'New Colleague',
+        'Alex',
         'Product analyst · Cross-team coordinator',
-        'Persona will be added during creation',
+        'Project manager · Direct and deadline-focused',
       ),
       _ => (
         'You',
@@ -663,7 +763,7 @@ class _RelationshipSetupHero extends StatelessWidget {
             ),
             _RelationshipHeroPerson(
               name: pair.$2,
-              avatar: pair.$2 == 'Alex' || pair.$2 == 'New Colleague'
+              avatar: pair.$2 == 'Alex'
                   ? DesignAvatarDraft.firstColleague
                   : const DesignAvatarData(
                       skinColor: Color(0xFFFBD0AF),
@@ -933,11 +1033,75 @@ class _IntroductionCard extends StatelessWidget {
   }
 }
 
+class _WorkspaceScenarioSelector extends StatelessWidget {
+  const _WorkspaceScenarioSelector({
+    required this.scenario,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final WorkspaceScenarioDesignScreen scenario;
+  final List<WorkspaceScenarioDesignScreen> options;
+  final ValueChanged<WorkspaceScenarioDesignScreen> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<WorkspaceScenarioDesignScreen>(
+      key: const ValueKey('workspace-scenario-selector'),
+      tooltip: 'Temporary scenario selector',
+      initialValue: scenario,
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final option in options)
+          PopupMenuItem(
+            key: ValueKey('workspace-scenario-${option.name}'),
+            value: option,
+            child: Text(option.label),
+          ),
+      ],
+      child: Container(
+        width: 118,
+        height: 27,
+        padding: const EdgeInsets.symmetric(horizontal: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDDF5FF),
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(color: const Color(0xFF806DE2)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                scenario.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF356A84),
+                  fontSize: 6.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.expand_more_rounded,
+              color: Color(0xFF725ED2),
+              size: 13,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _WorkspaceCollectionView extends StatelessWidget {
   const _WorkspaceCollectionView({
     super.key,
     required this.step,
     required this.stepNumber,
+    required this.scenario,
+    required this.effectiveChangeDate,
+    required this.onSelectEffectiveChangeDate,
     required this.compact,
     required this.promptController,
     required this.promptFocusNode,
@@ -946,15 +1110,13 @@ class _WorkspaceCollectionView extends StatelessWidget {
     required this.promptError,
     required this.status,
     required this.analyzing,
-    required this.scenario,
-    required this.scenarioOptions,
-    required this.onScenarioChanged,
     required this.listening,
     required this.onPromptChanged,
     required this.onVoiceInput,
     required this.onAnalyze,
     required this.onEditField,
     required this.onToggleReviewed,
+    required this.onToggleRelationshipReviewed,
     required this.onRelationshipScoreChanged,
     required this.onBack,
     required this.onNext,
@@ -962,6 +1124,9 @@ class _WorkspaceCollectionView extends StatelessWidget {
 
   final _WorkspaceCollectionStep step;
   final int stepNumber;
+  final WorkspaceScenarioDesignScreen scenario;
+  final DateTime? effectiveChangeDate;
+  final VoidCallback onSelectEffectiveChangeDate;
   final bool compact;
   final TextEditingController promptController;
   final FocusNode promptFocusNode;
@@ -970,15 +1135,13 @@ class _WorkspaceCollectionView extends StatelessWidget {
   final String? promptError;
   final String? status;
   final bool analyzing;
-  final WorkspaceScenarioDesignScreen scenario;
-  final List<WorkspaceScenarioDesignScreen> scenarioOptions;
-  final ValueChanged<WorkspaceScenarioDesignScreen> onScenarioChanged;
   final bool listening;
   final VoidCallback onPromptChanged;
   final VoidCallback onVoiceInput;
   final VoidCallback onAnalyze;
   final ValueChanged<int> onEditField;
   final ValueChanged<int> onToggleReviewed;
+  final VoidCallback onToggleRelationshipReviewed;
   final ValueChanged<double> onRelationshipScoreChanged;
   final VoidCallback onBack;
   final VoidCallback onNext;
@@ -996,91 +1159,65 @@ class _WorkspaceCollectionView extends StatelessWidget {
       for (var index = 0; index < step.fields.length; index++)
         if (index != relationshipScoreIndex) index,
     ];
+    final relationshipScore = relationshipScoreIndex < 0
+        ? 0.5
+        : fields[relationshipScoreIndex].relationshipScore ??
+              relationshipScoreForLabelDesignScreen(
+                fields[relationshipScoreIndex].title.text,
+              );
+    final relationshipLabel =
+        relationshipScoreIndex < 0 ||
+            fields[relationshipScoreIndex].title.text.trim().isEmpty
+        ? 'Neutral'
+        : fields[relationshipScoreIndex].title.text;
+    final screenTitle = switch ((stepNumber, scenario)) {
+      (3, WorkspaceScenarioDesignScreen.create) => 'Create a Colleague',
+      (3, WorkspaceScenarioDesignScreen.modify) => 'Modify a Colleague',
+      (
+        4,
+        WorkspaceScenarioDesignScreen.create ||
+            WorkspaceScenarioDesignScreen.createPair,
+      ) =>
+        'Create a Relationship',
+      (
+        4,
+        WorkspaceScenarioDesignScreen.modify ||
+            WorkspaceScenarioDesignScreen.modifyPair,
+      ) =>
+        'Modify a Relationship',
+      _ => step.title,
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    step.title,
-                    style: TextStyle(
-                      color: const Color(0xFF173F5D),
-                      fontSize: compact ? 18 : 22,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      step.instruction,
-                      maxLines: 2,
-                      style: const TextStyle(
-                        color: Color(0xFF5E8196),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: PopupMenuButton<WorkspaceScenarioDesignScreen>(
-                key: const ValueKey('workspace-scenario-selector'),
-                tooltip: 'Temporary scenario selector',
-                initialValue: scenario,
-                onSelected: onScenarioChanged,
-                itemBuilder: (context) => [
-                  for (final option in scenarioOptions)
-                    PopupMenuItem(
-                      key: ValueKey('workspace-scenario-${option.name}'),
-                      value: option,
-                      child: Text(option.label),
-                    ),
-                ],
-                child: Container(
-                  width: 118,
-                  height: 27,
-                  padding: const EdgeInsets.symmetric(horizontal: 7),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDDF5FF),
-                    borderRadius: BorderRadius.circular(7),
-                    border: Border.all(color: const Color(0xFF806DE2)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          scenario.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF356A84),
-                            fontSize: 6.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.expand_more_rounded,
-                        color: Color(0xFF725ED2),
-                        size: 13,
-                      ),
-                    ],
-                  ),
+        Padding(
+          padding: const EdgeInsets.only(left: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                screenTitle,
+                style: TextStyle(
+                  color: const Color(0xFF173F5D),
+                  fontSize: compact ? 18 : 22,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-            ),
-          ],
+              if (!compact) ...[
+                const SizedBox(height: 3),
+                Text(
+                  step.instruction,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    color: Color(0xFF5E8196),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         SizedBox(height: compact ? 4 : 8),
         TweenAnimationBuilder<double>(
@@ -1155,6 +1292,17 @@ class _WorkspaceCollectionView extends StatelessWidget {
             ),
           ),
         ),
+        if (effectiveChangeDate != null) ...[
+          const SizedBox(height: 5),
+          _EffectiveChangeDateRow(
+            key: const ValueKey('workspace-effective-change-date'),
+            label: stepNumber == 3
+                ? 'Profile Change Date'
+                : 'Relationship Change Date',
+            date: effectiveChangeDate!,
+            onTap: onSelectEffectiveChangeDate,
+          ),
+        ],
         SizedBox(
           height: relationshipScoreIndex >= 0
               ? (compact ? 10 : 14)
@@ -1172,26 +1320,43 @@ class _WorkspaceCollectionView extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                fields[relationshipScoreIndex].title.text.trim().isEmpty
-                    ? 'Tap the bar to choose'
-                    : fields[relationshipScoreIndex].title.text,
+              RelationshipScorePill(
                 key: const ValueKey('workspace-relationship-value'),
-                style: const TextStyle(
-                  color: Color(0xFF345F77),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
+                label: relationshipLabel,
+                score: relationshipScore,
+              ),
+              const SizedBox(width: 7),
+              GestureDetector(
+                key: const ValueKey('review-Relationship Score'),
+                behavior: HitTestBehavior.opaque,
+                onTap: onToggleRelationshipReviewed,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: fields[relationshipScoreIndex].reviewed
+                        ? const Color(0xFF3C98CF)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: fields[relationshipScoreIndex].reviewed
+                        ? null
+                        : Border.all(color: const Color(0xFF318DB6), width: 2),
+                  ),
+                  child: fields[relationshipScoreIndex].reviewed
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 15,
+                        )
+                      : null,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 2),
           RelationshipQualityBar(
-            score:
-                fields[relationshipScoreIndex].relationshipScore ??
-                relationshipScoreForLabelDesignScreen(
-                  fields[relationshipScoreIndex].title.text,
-                ),
+            score: relationshipScore,
             keyPrefix: 'workspace-relationship',
             onChanged: onRelationshipScoreChanged,
           ),
@@ -1262,6 +1427,82 @@ class _WorkspaceCollectionView extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _EffectiveChangeDateRow extends StatelessWidget {
+  const _EffectiveChangeDateRow({
+    super.key,
+    required this.label,
+    required this.date,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime date;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final isToday =
+        date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+    final dateText = isToday
+        ? 'Today'
+        : '${date.day.toString().padLeft(2, '0')}/'
+              '${date.month.toString().padLeft(2, '0')}/${date.year}';
+    return Material(
+      color: const Color(0xFFE7F4FF),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 29,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFF9EDCF5)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.history_rounded,
+                size: 15,
+                color: Color(0xFF318DB6),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '$label · used in history',
+                  style: const TextStyle(
+                    color: Color(0xFF356A84),
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                dateText,
+                style: const TextStyle(
+                  color: Color(0xFF725ED2),
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 3),
+              const Icon(
+                Icons.calendar_month_rounded,
+                size: 14,
+                color: Color(0xFF725ED2),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1498,14 +1739,12 @@ class _WorkspaceFieldEditorDialogState
                 ),
                 const SizedBox(height: 12),
                 Center(
-                  child: Text(
-                    relationshipLabelForScoreDesignScreen(relationshipScore),
+                  child: RelationshipScorePill(
                     key: const ValueKey('workspace-relationship-value'),
-                    style: const TextStyle(
-                      color: Color(0xFF245672),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                    label: relationshipLabelForScoreDesignScreen(
+                      relationshipScore,
                     ),
+                    score: relationshipScore,
                   ),
                 ),
                 const Spacer(),

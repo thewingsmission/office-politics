@@ -8,6 +8,7 @@ import 'package:office_politics/core/widgets/app_button.dart';
 import 'package:office_politics/features/account/application/session_controller.dart';
 import 'package:office_politics/features/account/data/local_account_repository.dart';
 import 'package:office_politics/features/engineering/data/first_launch_design_draft.dart';
+import 'package:office_politics/features/engineering/data/workspace_setup_design_draft.dart';
 import 'package:office_politics/features/engineering/domain/design_screen_definition.dart';
 import 'package:office_politics/features/engineering/presentation/advice_input_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/auth_design_screen.dart';
@@ -31,6 +32,7 @@ import 'package:office_politics/features/engineering/presentation/office_map_edi
 import 'package:office_politics/features/engineering/presentation/people_network_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/privacy_notice_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/relationship_setup_design_screen.dart';
+import 'package:office_politics/features/engineering/presentation/relationship_quality_bar.dart';
 import 'package:office_politics/features/engineering/presentation/screen_map_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/splash_design_screen.dart';
 import 'package:office_politics/features/engineering/presentation/workspace_setup_design_screen.dart';
@@ -77,7 +79,6 @@ void main() {
     );
     expect(find.text('Home Hub'), findsOneWidget);
     expect(find.text('First Launch'), findsOneWidget);
-    expect(find.text('Events'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -177,6 +178,41 @@ void main() {
         .position
         .pixels;
     expect(restoredScrollOffset, closeTo(scrollOffsetBeforeNavigation, 0.5));
+  });
+
+  testWidgets('engineering launches reusable setup screens in correct modes', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    Future<void> openAndVerify(String buttonLabel, String scenarioLabel) async {
+      final button = find.text(buttonLabel);
+      await tester.scrollUntilVisible(
+        button,
+        220,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('workspace-scenario-selector')),
+          matching: find.text(scenarioLabel),
+        ),
+        findsOneWidget,
+      );
+      tester
+          .widget<DesignBackButton>(find.byType(DesignBackButton))
+          .onPressed();
+      await tester.pumpAndSettle();
+    }
+
+    await openAndVerify('Colleague Screen', 'First Launch');
+    await openAndVerify('Relationship Setup Screen', 'First Launch');
+    await openAndVerify('Create Colleague', 'Create');
+    await openAndVerify('Modify Colleague', 'Modify');
+    await openAndVerify('Create Relationship', 'Create');
+    await openAndVerify('Modify Relationship', 'Modify');
   });
 
   testWidgets('all design previews fit a landscape phone', (tester) async {
@@ -543,9 +579,16 @@ void main() {
     await tester.pump();
 
     expect(find.text('Modify Alex’s avatar'), findsOneWidget);
-    expect(find.text('EXISTING CHARACTER'), findsOneWidget);
+    expect(find.text('Alex'), findsNothing);
+    expect(find.text('EXISTING CHARACTER'), findsNothing);
+    expect(find.text('Editing an existing character'), findsNothing);
     expect(find.byKey(const ValueKey('avatar-target-self')), findsNothing);
     expect(find.text('Save Changes'), findsOneWidget);
+    final faceLabTune = tester.getRect(
+      find.byKey(const ValueKey('face-lab-mode-tune')),
+    );
+    expect(faceLabTune.top, closeTo(16, 0.1));
+    expect(faceLabTune.right, closeTo(940, 0.1));
 
     await tester.tap(find.text('Save Changes'));
     await tester.pump();
@@ -577,6 +620,13 @@ void main() {
     expect(find.byKey(const ValueKey('people-network-guide')), findsOneWidget);
     expect(find.text('Create Colleague'), findsOneWidget);
     expect(
+      find.descendant(
+        of: find.widgetWithText(AppButton, 'Create Colleague'),
+        matching: find.byIcon(Icons.person_add_alt_1_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey('people-network-person-0')),
       findsOneWidget,
     );
@@ -594,6 +644,13 @@ void main() {
     expect(find.text('Create Colleague'), findsNothing);
     expect(find.text('View Full Profile'), findsOneWidget);
     expect(find.text('Modify Persona'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.widgetWithText(AppButton, 'View Full Profile'),
+        matching: find.byIcon(Icons.account_box_outlined),
+      ),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const ValueKey('people-network-hexagon-chart')),
       findsOneWidget,
@@ -669,24 +726,55 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('people-network-guide')), findsOneWidget);
 
-    final source = tester.getCenter(
+    var source = tester.getCenter(
       find.byKey(const ValueKey('people-network-person-0')),
     );
-    final target = tester.getCenter(
+    var target = tester.getCenter(
+      find.byKey(const ValueKey('people-network-person-1')),
+    );
+    final heldTap = await tester.startGesture(source);
+    await tester.pump(const Duration(milliseconds: 500));
+    await heldTap.up();
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('people-network-persona')),
+      findsOneWidget,
+    );
+    await tester.tapAt(scene.topLeft + const Offset(8, 8));
+    await tester.pump();
+
+    source = tester.getCenter(
+      find.byKey(const ValueKey('people-network-person-0')),
+    );
+    target = tester.getCenter(
       find.byKey(const ValueKey('people-network-person-1')),
     );
     final gesture = await tester.startGesture(source);
+    await gesture.moveTo(source + const Offset(30, 0));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(
       find.byKey(const ValueKey('people-network-silhouette-glow-You-active')),
       findsOneWidget,
     );
-    await tester.pump(const Duration(milliseconds: 200));
     expect(
       find.byKey(const ValueKey('people-network-relationship-drag-none')),
       findsOneWidget,
     );
+    final sourceLinePainter =
+        tester
+                .widget<CustomPaint>(
+                  find.byKey(
+                    const ValueKey('people-network-relationship-drag-none'),
+                  ),
+                )
+                .painter
+            as dynamic;
+    expect(
+      sourceLinePainter.sourceColor,
+      peopleNetworkPeopleDesignScreen.first.shirtColor,
+    );
+    expect(sourceLinePainter.targetColor, isNull);
     await gesture.moveTo(target);
     await tester.pump();
     expect(
@@ -698,7 +786,31 @@ void main() {
       find.byKey(const ValueKey('people-network-silhouette-glow-Alex-active')),
       findsOneWidget,
     );
-    await tester.pump(const Duration(milliseconds: 250));
+    final growingLinePainter =
+        tester
+                .widget<CustomPaint>(
+                  find.byKey(
+                    const ValueKey('people-network-relationship-drag-1'),
+                  ),
+                )
+                .painter
+            as dynamic;
+    expect(
+      growingLinePainter.targetColor,
+      peopleNetworkPeopleDesignScreen[1].shirtColor,
+    );
+    expect(growingLinePainter.connectionProgress, inExclusiveRange(0, 1));
+    await tester.pump(const Duration(milliseconds: 200));
+    final readyLinePainter =
+        tester
+                .widget<CustomPaint>(
+                  find.byKey(
+                    const ValueKey('people-network-relationship-drag-1'),
+                  ),
+                )
+                .painter
+            as dynamic;
+    expect(readyLinePainter.ready, isTrue);
 
     expect(
       find.byKey(const ValueKey('people-network-relationship')),
@@ -724,6 +836,13 @@ void main() {
     );
     expect(find.text('Modify Relationship'), findsOneWidget);
     expect(
+      find.descendant(
+        of: find.widgetWithText(AppButton, 'Modify Relationship'),
+        matching: find.byIcon(Icons.hub_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey('people-network-relationship-avatar-You')),
       findsOneWidget,
     );
@@ -745,28 +864,39 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: const CharacterProfileDesignScreen(),
+        home: const CharacterProfileDesignScreen(initialPerson: 'You'),
       ),
     );
     await tester.pump();
     expect(find.text('Character Profile'), findsOneWidget);
     expect(find.text('You'), findsWidgets);
+    expect(find.text('Personal Information'), findsOneWidget);
+    expect(find.text('Colleague Relationships'), findsOneWidget);
+    expect(find.text('Recent Events Involving You'), findsOneWidget);
+    expect(find.text('PERSON METRIC HISTORY'), findsOneWidget);
+    expect(find.text('RELATIONSHIP SCORE HISTORY'), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('1. Maya')).dy,
+      lessThan(tester.getTopLeft(find.text('2. Jordan')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('2. Jordan')).dy,
+      lessThan(tester.getTopLeft(find.text('3. Alex')).dy),
+    );
+    expect(find.text('Modify Relationship'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('character-profile-selector')));
+    await tester.pumpAndSettle();
     expect(find.text('Alex'), findsOneWidget);
     expect(find.text('Maya'), findsOneWidget);
     expect(find.text('Jordan'), findsOneWidget);
-    expect(find.text('Your Recorded Information'), findsOneWidget);
-    expect(find.text('Modify Relationship'), findsNothing);
-
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const ValueKey('character-profile-selector')),
-        matching: find.text('Alex'),
-      ),
-    );
-    await tester.pump();
-    expect(find.text('Colleague Information'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('character-profile-person-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Personal Information'), findsOneWidget);
     expect(find.text('Relationship With You'), findsOneWidget);
-    expect(find.text('Related Events Added During Use'), findsOneWidget);
+    expect(find.text('Recent Events Involving Alex'), findsOneWidget);
+    expect(find.text('RELATIONSHIP SCORE HISTORY'), findsOneWidget);
+    expect(find.text('Colleague Relationships'), findsNothing);
     expect(find.text('Modify Relationship'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -802,13 +932,144 @@ void main() {
       find.byKey(const ValueKey('relationship-setup-pair-hero')),
       findsOneWidget,
     );
-    expect(find.text('Maya and New Colleague'), findsOneWidget);
+    expect(find.text('Maya and Jordan'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('workspace-scenario-createPair')),
       findsOneWidget,
     );
+    expect(find.text('Create a Relationship'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('relationship analysis suggests a confirmable score', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(956, 440);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    WorkspaceSetupDesignDraft.clear();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const RelationshipSetupDesignScreen(),
+      ),
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('workspace-prompt-4')),
+      'Alex and I have a tense, difficult relationship with very little trust.',
+    );
+    await tester.tap(find.text('Analyze'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    final suggestedScore = tester.widget<RelationshipScorePill>(
+      find.byKey(const ValueKey('workspace-relationship-value')),
+    );
+    expect(suggestedScore.label, 'Bad');
+    expect(suggestedScore.score, 0.25);
+    final scoreConfirmation = find.byKey(
+      const ValueKey('review-Relationship Score'),
+    );
+    expect(
+      find.descendant(
+        of: scoreConfirmation,
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsNothing,
+    );
+    await tester.tap(scoreConfirmation);
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: scoreConfirmation,
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    WorkspaceSetupDesignDraft.clear();
+  });
+
+  testWidgets(
+    'modify setup previews fill fields with requested review states',
+    (tester) async {
+      tester.view.physicalSize = const Size(956, 440);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      Rect? sharedSelectorRect;
+      Future<void> verifyModifyScreen(
+        Widget screen, {
+        required int visibleReviewedFields,
+      }) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: KeyedSubtree(key: UniqueKey(), child: screen),
+          ),
+        );
+        await tester.pump();
+        expect(
+          find.byIcon(Icons.check_rounded),
+          findsNWidgets(visibleReviewedFields),
+        );
+        final selectorRect = tester.getRect(
+          find.byKey(const ValueKey('workspace-scenario-selector')),
+        );
+        if (sharedSelectorRect == null) {
+          sharedSelectorRect = selectorRect;
+        } else {
+          expect(selectorRect.top, closeTo(sharedSelectorRect!.top, 0.1));
+          expect(selectorRect.right, closeTo(sharedSelectorRect!.right, 0.1));
+        }
+        expect(tester.takeException(), isNull);
+      }
+
+      await verifyModifyScreen(
+        const WorkplaceDesignScreen(
+          initialScenario: WorkspaceScenarioDesignScreen.modify,
+        ),
+        visibleReviewedFields: 6,
+      );
+      await verifyModifyScreen(
+        const YourselfDesignScreen(
+          initialScenario: WorkspaceScenarioDesignScreen.modify,
+        ),
+        visibleReviewedFields: 6,
+      );
+      await verifyModifyScreen(
+        const ColleagueDesignScreen(
+          initialScenario: WorkspaceScenarioDesignScreen.modify,
+        ),
+        visibleReviewedFields: 0,
+      );
+      expect(find.text('Modify a Colleague'), findsOneWidget);
+      expect(find.textContaining('Profile Change Date'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      await verifyModifyScreen(
+        const RelationshipSetupDesignScreen(
+          initialScenario: WorkspaceScenarioDesignScreen.modify,
+        ),
+        visibleReviewedFields: 0,
+      );
+      expect(find.text('Modify a Relationship'), findsOneWidget);
+      expect(find.textContaining('Relationship Change Date'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      final scorePill = tester.widget<RelationshipScorePill>(
+        find.byKey(const ValueKey('workspace-relationship-value')),
+      );
+      expect(scorePill.label, isNotEmpty);
+      expect(scorePill.score, inInclusiveRange(0, 1));
+      expect(find.text('You and Alex'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+      WorkspaceSetupDesignDraft.clear();
+    },
+  );
 
   testWidgets('event timeline and editor cover inspect create and analysis', (
     tester,
@@ -885,7 +1146,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('Step 3 · Add one colleague'), findsOneWidget);
+    expect(find.text('Modify a Colleague'), findsOneWidget);
     expect(find.text('Observed Style'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('workspace-scenario-selector')));
     await tester.pumpAndSettle();
@@ -894,6 +1155,7 @@ void main() {
     expect(find.text('Modify'), findsWidgets);
     await tester.tap(find.byKey(const ValueKey('workspace-scenario-create')));
     await tester.pump();
+    expect(find.text('Create a Colleague'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('workspace-scenario-create')),
       findsOneWidget,
@@ -930,7 +1192,7 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Create Taylor’s avatar'), findsWidgets);
-    expect(find.text('Creating one colleague avatar'), findsOneWidget);
+    expect(find.text('Creating one colleague avatar'), findsNothing);
     expect(find.text('Create Colleague'), findsOneWidget);
     expect(find.byKey(const ValueKey('avatar-target-self')), findsNothing);
     expect(find.byKey(const ValueKey('face-lab-mode-tune')), findsOneWidget);
@@ -1427,8 +1689,14 @@ void main() {
     expect(find.text('Relationship Score'), findsOneWidget);
     expect(find.byKey(const ValueKey('workspace-field-4-3')), findsNothing);
     expect(find.text('Very Bad'), findsOneWidget);
-    expect(find.text('Neutral'), findsOneWidget);
+    expect(find.text('Neutral'), findsNWidgets(2));
     expect(find.text('Very Good'), findsOneWidget);
+    expect(find.text('Tap the bar to choose'), findsNothing);
+    final defaultScorePill = tester.widget<RelationshipScorePill>(
+      find.byKey(const ValueKey('workspace-relationship-value')),
+    );
+    expect(defaultScorePill.label, 'Neutral');
+    expect(defaultScorePill.score, 0.5);
     final scoreBar = tester.getRect(
       find.byKey(const ValueKey('workspace-relationship-gradient')),
     );
@@ -1627,8 +1895,85 @@ void main() {
       expect(find.text('More'), findsOneWidget);
       expect(find.text('ARCADE QUICK-LAUNCH'), findsNothing);
       expect(find.text('Home'), findsNothing);
+      expect(find.text('Office Politics · Tactical Dashboard'), findsNothing);
+      expect(find.byKey(const ValueKey('home-top-control')), findsOneWidget);
       expect(find.text('POLITICS INTENSITY'), findsOneWidget);
-      expect(find.text('Alex · Project Manager'), findsOneWidget);
+      expect(find.text('YOUR LEVEL & METRICS'), findsOneWidget);
+      expect(find.text('LEVEL 7 · STRATEGIST'), findsOneWidget);
+      expect(find.text('Influence'), findsWidgets);
+      expect(find.text('Support Network'), findsOneWidget);
+      expect(find.text('Credibility'), findsOneWidget);
+      expect(find.text('Exposure Risk'), findsOneWidget);
+      expect(find.text('PERSONA'), findsOneWidget);
+      expect(
+        tester.getRect(find.byKey(const ValueKey('home-left-panel'))),
+        const Rect.fromLTWH(12, 43, 232, 331),
+      );
+      expect(
+        tester.getRect(find.byKey(const ValueKey('home-right-panel'))),
+        const Rect.fromLTWH(756, 43, 188, 331),
+      );
+      expect(find.textContaining('Panel H'), findsNothing);
+      final homeHexagonPainter = tester
+          .widget<CustomPaint>(
+            find.byKey(const ValueKey('home-persona-hexagon-chart')),
+          )
+          .painter;
+      expect(homeHexagonPainter, isA<PersonaHexagonPainterDesignScreen>());
+      expect(
+        tester.getRect(
+          find.byKey(const ValueKey('home-infinite-office-floor')),
+        ),
+        Offset.zero & const Size(956, 440),
+      );
+      final officeCanvas = tester.getRect(
+        find.byKey(const ValueKey('home-office-canvas')),
+      );
+      expect(officeCanvas.left, closeTo(-191.2, 0.1));
+      expect(officeCanvas.right, closeTo(1147.2, 0.1));
+      expect(officeCanvas.top, closeTo(-88, 0.1));
+      expect(officeCanvas.bottom, closeTo(528, 0.1));
+      final dynamic homeState = tester.state(find.byType(HomeDesignScreen));
+      final initialPersona = homeState.selectedPersonDesignScreen as int;
+      final initialPerson = officePeopleDesignScreen[initialPersona];
+      final personaOutline = find.byKey(
+        const ValueKey('home-persona-panel-outline'),
+      );
+      final initialOutlineRect = tester.getRect(personaOutline);
+      final initialOutlineDecoration =
+          tester.widget<AnimatedContainer>(personaOutline).decoration!
+              as BoxDecoration;
+      expect(
+        (initialOutlineDecoration.gradient! as LinearGradient).colors.last,
+        initialPerson.shirtColor,
+      );
+      expect(
+        find.text('${initialPerson.name} · ${initialPerson.role}'),
+        findsOneWidget,
+      );
+      expect(find.text(initialPerson.role), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('home-right-panel')),
+          matching: find.byType(SlideTransition),
+        ),
+        findsNothing,
+      );
+      await tester.pump(const Duration(seconds: 4));
+      expect(homeState.selectedPersonDesignScreen, initialPersona);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(homeState.selectedPersonDesignScreen, isNot(initialPersona));
+      expect(tester.getRect(personaOutline), initialOutlineRect);
+      final rotatedPerson =
+          officePeopleDesignScreen[homeState.selectedPersonDesignScreen as int];
+      final rotatedOutlineDecoration =
+          tester.widget<AnimatedContainer>(personaOutline).decoration!
+              as BoxDecoration;
+      expect(
+        (rotatedOutlineDecoration.gradient! as LinearGradient).colors.last,
+        rotatedPerson.shirtColor,
+      );
       expect(
         find.byWidgetPredicate(
           (widget) =>
@@ -1649,7 +1994,7 @@ void main() {
         final nav = tester.widget<InkWell>(
           find.byKey(ValueKey('home-nav-$label')),
         );
-        expect(nav.borderRadius, BorderRadius.circular(999));
+        expect(nav.borderRadius, BorderRadius.circular(14));
       }
 
       expect(
@@ -1658,11 +2003,11 @@ void main() {
       );
       expect(
         tester.getRect(find.byKey(const ValueKey('home-nav-people'))).left,
-        closeTo(12, 0.1),
+        closeTo(75, 0.1),
       );
       expect(
         tester.getRect(find.byKey(const ValueKey('home-nav-more'))).right,
-        closeTo(944, 0.1),
+        closeTo(881, 0.1),
       );
       expect(
         tester
@@ -1670,7 +2015,32 @@ void main() {
               find.byKey(const ValueKey('home-nav-scale-advice')),
             )
             .scale,
-        1.16,
+        1,
+      );
+      final navRects = [
+        for (final label in [
+          'people',
+          'events',
+          'map',
+          'advice',
+          'arcade',
+          'profile',
+          'more',
+        ])
+          tester.getRect(find.byKey(ValueKey('home-nav-$label'))),
+      ];
+      for (var index = 1; index < navRects.length; index++) {
+        expect(
+          navRects[index].left - navRects[index - 1].right,
+          closeTo(10, 0.1),
+        );
+      }
+      final peopleLabel = tester.widget<Text>(find.text('People'));
+      expect(
+        peopleLabel.style?.fontSize,
+        Theme.of(
+          tester.element(find.text('People')),
+        ).textTheme.labelLarge?.fontSize,
       );
       expect(
         find.byKey(
@@ -1688,10 +2058,9 @@ void main() {
       await tester.tap(find.text('Close'));
       await tester.pump();
 
-      final topPanel = find.text('Office Politics · Tactical Dashboard');
+      final topPanel = find.byKey(const ValueKey('home-top-control'));
       final controlsVisibleY = tester.getTopLeft(topPanel).dy;
       final office = find.byKey(const ValueKey('home-office-interaction'));
-      final dynamic homeState = tester.state(find.byType(HomeDesignScreen));
       final gesture = await tester.startGesture(tester.getCenter(office));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 320));
@@ -1701,6 +2070,12 @@ void main() {
       await gesture.moveBy(const Offset(34, 18));
       await tester.pump();
       expect(homeState.mapPanOffsetDesignScreen, const Offset(34, 18));
+      final dynamic floorPainter = tester
+          .widget<CustomPaint>(
+            find.byKey(const ValueKey('home-infinite-office-floor')),
+          )
+          .painter;
+      expect(floorPainter.offset, const Offset(34, 18));
 
       await gesture.up();
       await tester.pump();
@@ -1719,7 +2094,7 @@ void main() {
               find.byKey(const ValueKey('home-nav-scale-people')),
             )
             .scale,
-        1.16,
+        1.12,
       );
       expect(
         tester
@@ -1727,7 +2102,7 @@ void main() {
               find.byKey(const ValueKey('home-nav-scale-events')),
             )
             .scale,
-        0.84,
+        0.88,
       );
       await navGesture.cancel();
       await tester.pump(const Duration(milliseconds: 190));
@@ -1817,7 +2192,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('POLITICS INTENSITY'), findsOneWidget);
-    expect(find.text('YOUR POLITICS SNAPSHOT'), findsOneWidget);
+    expect(find.text('YOUR LEVEL & METRICS'), findsOneWidget);
 
     await tester.tap(find.text('Alex'));
     await tester.pump();

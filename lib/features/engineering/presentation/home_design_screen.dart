@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,8 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
     with TickerProviderStateMixin {
   late final AnimationController panelAnimationDesignScreen;
   late final AnimationController officeMotionDesignScreen;
+  late final Timer personaRotationTimerDesignScreen;
+  final math.Random personaRandomDesignScreen = math.Random();
 
   Offset userPositionDesignScreen = const Offset(0.52, 0.56);
   Offset mapPanOffsetDesignScreen = Offset.zero;
@@ -37,13 +40,30 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
       vsync: this,
       duration: const Duration(milliseconds: 3200),
     )..repeat();
+    selectedPersonDesignScreen = personaRandomDesignScreen.nextInt(
+      officePeopleDesignScreen.length,
+    );
+    personaRotationTimerDesignScreen = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => rotatePersonaDesignScreen(),
+    );
   }
 
   @override
   void dispose() {
+    personaRotationTimerDesignScreen.cancel();
     panelAnimationDesignScreen.dispose();
     officeMotionDesignScreen.dispose();
     super.dispose();
+  }
+
+  void rotatePersonaDesignScreen() {
+    if (!mounted || officePeopleDesignScreen.length < 2) return;
+    var next = personaRandomDesignScreen.nextInt(
+      officePeopleDesignScreen.length - 1,
+    );
+    if (next >= selectedPersonDesignScreen) next++;
+    setState(() => selectedPersonDesignScreen = next);
   }
 
   void beginOfficeMoveDesignScreen(Offset localPosition) {
@@ -227,132 +247,181 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4FAFF),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final size = constraints.biggest;
-            final leftWidth = math.min(232.0, size.width * 0.25);
-            final rightWidth = math.min(188.0, size.width * 0.20);
-            final isCompact = size.width < 780;
-
-            return Listener(
-              key: const ValueKey('home-office-interaction'),
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: (event) {
-                final point = event.localPosition;
-                final isOfficeArea =
-                    point.dx > leftWidth &&
-                    point.dx < size.width - rightWidth &&
-                    point.dy > 42 &&
-                    point.dy < size.height - 64;
-                if (!isOfficeArea) return;
-                beginOfficeMoveDesignScreen(point);
-              },
-              onPointerMove: (event) {
-                if (!movingUserDesignScreen) return;
-                updateUserPositionDesignScreen(event.localPosition, size);
-              },
-              onPointerUp: (_) => finishOfficeMoveDesignScreen(),
-              onPointerCancel: (_) => finishOfficeMoveDesignScreen(),
-              child: Stack(
-                children: [
-                  const Positioned.fill(child: _TacticalBackground()),
-                  Positioned(
-                    left:
-                        (size.width - size.width * 1.65) / 2 +
-                        mapPanOffsetDesignScreen.dx,
-                    top:
-                        (size.height - size.height * 1.55) / 2 +
-                        mapPanOffsetDesignScreen.dy,
-                    width: size.width * 1.65,
-                    height: size.height * 1.55,
-                    child: AnimatedBuilder(
-                      animation: officeMotionDesignScreen,
-                      builder: (context, _) => _IsometricOffice(
-                        motion: officeMotionDesignScreen.value,
-                        userPosition: userPositionDesignScreen,
-                        onPersonSelected: showPersonaDesignScreen,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    key: const ValueKey('home-top-panel'),
-                    left: 12,
-                    right: 12,
-                    top: 3,
-                    height: 36,
-                    child: AnimatedBuilder(
-                      animation: panelAnimationDesignScreen,
-                      builder: (context, child) => Transform.translate(
-                        offset: Offset(
-                          0,
-                          -50 * panelAnimationDesignScreen.value,
-                        ),
-                        child: child,
-                      ),
-                      child: _TopBar(onBack: () => context.go('/engineering')),
-                    ),
-                  ),
-                  Positioned(
-                    left: 12,
-                    top: 48,
-                    bottom: 66,
-                    width: leftWidth,
-                    child: AnimatedBuilder(
-                      animation: panelAnimationDesignScreen,
-                      builder: (context, child) => Transform.translate(
-                        offset: Offset(
-                          -(leftWidth + 20) * panelAnimationDesignScreen.value,
-                          0,
-                        ),
-                        child: child,
-                      ),
-                      child: _UserPoliticsPanel(compact: isCompact),
-                    ),
-                  ),
-                  Positioned(
-                    right: 12,
-                    top: 48,
-                    bottom: 66,
-                    width: rightWidth,
-                    child: AnimatedBuilder(
-                      animation: panelAnimationDesignScreen,
-                      builder: (context, child) => Transform.translate(
-                        offset: Offset(
-                          (rightWidth + 20) * panelAnimationDesignScreen.value,
-                          0,
-                        ),
-                        child: child,
-                      ),
-                      child: _RelationshipPanel(
-                        compact: isCompact,
-                        person:
-                            officePeopleDesignScreen[selectedPersonDesignScreen],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 0,
-                    height: 48,
-                    child: AnimatedBuilder(
-                      animation: panelAnimationDesignScreen,
-                      builder: (context, child) => Transform.translate(
-                        offset: Offset(
-                          0,
-                          66 * panelAnimationDesignScreen.value,
-                        ),
-                        child: child,
-                      ),
-                      child: const _BottomNavigation(),
-                    ),
-                  ),
-                ],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              key: const ValueKey('home-infinite-office-floor'),
+              painter: _InfiniteOfficeFloorPainter(
+                offset: mapPanOffsetDesignScreen,
+                safePadding: MediaQuery.paddingOf(context),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final size = constraints.biggest;
+                final leftWidth = math.min(232.0, size.width * 0.25);
+                final rightWidth = math.min(188.0, size.width * 0.20);
+                final isCompact = size.width < 780;
+                final officeCanvasPadding = Offset(
+                  size.width * 0.20,
+                  size.height * 0.20,
+                );
+
+                return Listener(
+                  key: const ValueKey('home-office-interaction'),
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (event) {
+                    final point = event.localPosition;
+                    final isOfficeArea =
+                        point.dx > leftWidth &&
+                        point.dx < size.width - rightWidth &&
+                        point.dy > 42 &&
+                        point.dy < size.height - 64;
+                    if (!isOfficeArea) return;
+                    beginOfficeMoveDesignScreen(point);
+                  },
+                  onPointerMove: (event) {
+                    if (!movingUserDesignScreen) return;
+                    updateUserPositionDesignScreen(event.localPosition, size);
+                  },
+                  onPointerUp: (_) => finishOfficeMoveDesignScreen(),
+                  onPointerCancel: (_) => finishOfficeMoveDesignScreen(),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        key: const ValueKey('home-office-canvas'),
+                        left:
+                            -officeCanvasPadding.dx +
+                            mapPanOffsetDesignScreen.dx,
+                        top:
+                            -officeCanvasPadding.dy +
+                            mapPanOffsetDesignScreen.dy,
+                        width: size.width + officeCanvasPadding.dx * 2,
+                        height: size.height + officeCanvasPadding.dy * 2,
+                        child: AnimatedBuilder(
+                          animation: officeMotionDesignScreen,
+                          builder: (context, _) => _IsometricOffice(
+                            motion: officeMotionDesignScreen.value,
+                            userPosition: userPositionDesignScreen,
+                            canvasPadding: officeCanvasPadding,
+                            onPersonSelected: showPersonaDesignScreen,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        key: const ValueKey('home-left-panel'),
+                        left: 12,
+                        top: 43,
+                        bottom: 66,
+                        width: leftWidth,
+                        child: AnimatedBuilder(
+                          animation: panelAnimationDesignScreen,
+                          builder: (context, child) => Transform.translate(
+                            offset: Offset(
+                              -(leftWidth + 20) *
+                                  panelAnimationDesignScreen.value,
+                              0,
+                            ),
+                            child: child,
+                          ),
+                          child: _UserPoliticsPanel(compact: isCompact),
+                        ),
+                      ),
+                      Positioned(
+                        key: const ValueKey('home-right-panel'),
+                        right: 12,
+                        top: 43,
+                        bottom: 66,
+                        width: rightWidth,
+                        child: AnimatedBuilder(
+                          animation: panelAnimationDesignScreen,
+                          builder: (context, child) => Transform.translate(
+                            offset: Offset(
+                              (rightWidth + 20) *
+                                  panelAnimationDesignScreen.value,
+                              0,
+                            ),
+                            child: child,
+                          ),
+                          child: _TacticalPanel(
+                            outerKey: const ValueKey(
+                              'home-persona-panel-outline',
+                            ),
+                            outlineColor:
+                                officePeopleDesignScreen[selectedPersonDesignScreen]
+                                    .shirtColor,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 800),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  ),
+                              child: _RelationshipPanel(
+                                key: ValueKey(
+                                  'home-persona-slide-${officePeopleDesignScreen[selectedPersonDesignScreen].name}',
+                                ),
+                                compact: isCompact,
+                                person:
+                                    officePeopleDesignScreen[selectedPersonDesignScreen],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        key: const ValueKey('home-top-panel'),
+                        left: 12,
+                        right: 12,
+                        top: 3,
+                        height: 36,
+                        child: AnimatedBuilder(
+                          animation: panelAnimationDesignScreen,
+                          builder: (context, child) => Transform.translate(
+                            offset: Offset(
+                              0,
+                              -50 * panelAnimationDesignScreen.value,
+                            ),
+                            child: child,
+                          ),
+                          child: Align(
+                            key: const ValueKey('home-top-control'),
+                            alignment: Alignment.centerLeft,
+                            child: DesignBackButton(
+                              onPressed: () => context.go('/engineering'),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 12,
+                        right: 12,
+                        bottom: 0,
+                        height: 48,
+                        child: AnimatedBuilder(
+                          animation: panelAnimationDesignScreen,
+                          builder: (context, child) => Transform.translate(
+                            offset: Offset(
+                              0,
+                              66 * panelAnimationDesignScreen.value,
+                            ),
+                            child: child,
+                          ),
+                          child: const _BottomNavigation(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -416,95 +485,100 @@ class _PersonaSummaryRow extends StatelessWidget {
   }
 }
 
-class _TacticalBackground extends StatelessWidget {
-  const _TacticalBackground();
+class _InfiniteOfficeFloorPainter extends CustomPainter {
+  const _InfiniteOfficeFloorPainter({
+    required this.offset,
+    required this.safePadding,
+  });
+
+  final Offset offset;
+  final EdgeInsets safePadding;
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFDDF5FF), Color(0xFFF4FAFF), Color(0xFFEAE5FF)],
-        ),
-      ),
-      child: CustomPaint(painter: _CircuitPainter()),
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFEEF9FF),
     );
+
+    final viewportWidth = size.width - safePadding.horizontal;
+    final viewportHeight = size.height - safePadding.vertical;
+    final origin = Offset(
+      safePadding.left + viewportWidth * 0.5 + offset.dx,
+      safePadding.top - viewportHeight * 0.1665 + offset.dy,
+    );
+    final alongX = Offset(viewportWidth * 0.06435, viewportHeight * 0.06665);
+    final alongY = Offset(-alongX.dx, alongX.dy);
+    final step = math.max(1.0, math.min(alongX.distance, alongY.distance));
+    final lineCount = ((size.width + size.height) / step).ceil() + 10;
+    final extension = lineCount * 2.0;
+    final gridPaint = Paint()
+      ..color = const Color(0x403299D0)
+      ..strokeWidth = 1;
+
+    for (var index = -lineCount; index <= lineCount; index++) {
+      final lineOffset = index.toDouble();
+      canvas
+        ..drawLine(
+          origin + alongX * lineOffset - alongY * extension,
+          origin + alongX * lineOffset + alongY * extension,
+          gridPaint,
+        )
+        ..drawLine(
+          origin + alongY * lineOffset - alongX * extension,
+          origin + alongY * lineOffset + alongX * extension,
+          gridPaint,
+        );
+    }
   }
-}
-
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onBack});
-
-  final VoidCallback onBack;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        DesignBackButton(onPressed: onBack),
-        const Expanded(
-          child: Text(
-            'Office Politics · Tactical Dashboard',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF274E62),
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ),
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: const Color(0xFFE7F4FF),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFF65C5ED)),
-          ),
-          child: const Icon(
-            Icons.person_rounded,
-            color: Color(0xFF3299D0),
-            size: 22,
-          ),
-        ),
-      ],
-    );
-  }
+  bool shouldRepaint(covariant _InfiniteOfficeFloorPainter oldDelegate) =>
+      oldDelegate.offset != offset || oldDelegate.safePadding != safePadding;
 }
 
 class _TacticalPanel extends StatelessWidget {
-  const _TacticalPanel({required this.child});
+  const _TacticalPanel({required this.child, this.outlineColor, this.outerKey});
 
   final Widget child;
+  final Color? outlineColor;
+  final Key? outerKey;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final outline = outlineColor;
+    return AnimatedContainer(
+      key: outerKey,
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.easeInOutCubic,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF3CB9E7), Color(0xFF778FE8)],
+          colors: outline == null
+              ? const [Color(0xFF3CB9E7), Color(0xFF778FE8)]
+              : [Color.lerp(Colors.white, outline, 0.48)!, outline],
         ),
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x263299D0),
+            color: (outline ?? const Color(0xFF3299D0)).withValues(alpha: 0.18),
             blurRadius: 16,
-            offset: Offset(0, 7),
+            offset: const Offset(0, 7),
           ),
         ],
       ),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 520),
+        curve: Curves.easeInOutCubic,
         padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
           color: const Color(0xFAFFFFFF),
           borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: const Color(0xFFCFECFA)),
+          border: Border.all(
+            color: outline?.withValues(alpha: 0.32) ?? const Color(0xFFCFECFA),
+          ),
         ),
         child: child,
       ),
@@ -524,8 +598,8 @@ class _UserPoliticsPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _PanelHeading(
-            icon: Icons.shield_outlined,
-            label: 'YOUR POLITICS SNAPSHOT',
+            icon: Icons.military_tech_outlined,
+            label: 'YOUR LEVEL & METRICS',
           ),
           SizedBox(height: compact ? 6 : 9),
           const Row(
@@ -545,7 +619,7 @@ class _UserPoliticsPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'YOU · STRATEGIST',
+                      'LEVEL 7 · STRATEGIST',
                       style: TextStyle(
                         color: Color(0xFF27566B),
                         fontSize: 9,
@@ -553,7 +627,7 @@ class _UserPoliticsPanel extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Product Team · Mid-level',
+                      '1,240 / 1,500 progress',
                       style: TextStyle(
                         color: Color(0xFF668A9B),
                         fontSize: 7,
@@ -574,32 +648,28 @@ class _UserPoliticsPanel extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: const [
-                _UserInfoTile(
-                  icon: Icons.visibility_outlined,
-                  label: 'Visibility',
-                  value: 'High',
+                _UserMetricTile(
+                  label: 'Influence',
+                  value: 0.61,
                   color: Color(0xFF2C94B9),
                 ),
                 SizedBox(height: 4),
-                _UserInfoTile(
-                  icon: Icons.groups_2_outlined,
-                  label: 'Ally coverage',
-                  value: 'Moderate',
+                _UserMetricTile(
+                  label: 'Support Network',
+                  value: 0.54,
                   color: Color(0xFF45A58E),
                 ),
                 SizedBox(height: 4),
-                _UserInfoTile(
-                  icon: Icons.bolt_rounded,
-                  label: 'Current pressure',
-                  value: 'Q3 report dispute',
-                  color: Color(0xFFE47B6F),
+                _UserMetricTile(
+                  label: 'Credibility',
+                  value: 0.76,
+                  color: Color(0xFF657FC2),
                 ),
                 SizedBox(height: 4),
-                _UserInfoTile(
-                  icon: Icons.flag_outlined,
-                  label: 'Main objective',
-                  value: 'Protect credibility',
-                  color: Color(0xFF657FC2),
+                _UserMetricTile(
+                  label: 'Exposure Risk',
+                  value: 0.68,
+                  color: Color(0xFFE47B6F),
                 ),
               ],
             ),
@@ -652,17 +722,15 @@ class _PoliticsGauge extends StatelessWidget {
   }
 }
 
-class _UserInfoTile extends StatelessWidget {
-  const _UserInfoTile({
-    required this.icon,
+class _UserMetricTile extends StatelessWidget {
+  const _UserMetricTile({
     required this.label,
     required this.value,
     required this.color,
   });
 
-  final IconData icon;
   final String label;
-  final String value;
+  final double value;
   final Color color;
 
   @override
@@ -675,30 +743,38 @@ class _UserInfoTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(7),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Icon(icon, color: color, size: 13),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF587A8A),
-                fontSize: 7,
-                fontWeight: FontWeight.w700,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF587A8A),
+                    fontSize: 7,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
+              Text(
+                '${(value * 100).round()}',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 7,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
-          Flexible(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontSize: 7,
-                fontWeight: FontWeight.w900,
-              ),
+          const SizedBox(height: 2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: value,
+              minHeight: 3,
+              backgroundColor: Colors.white.withValues(alpha: 0.72),
+              valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
         ],
@@ -726,85 +802,79 @@ class _PanelHeading extends StatelessWidget {
 }
 
 class _RelationshipPanel extends StatelessWidget {
-  const _RelationshipPanel({required this.compact, required this.person});
+  const _RelationshipPanel({
+    super.key,
+    required this.compact,
+    required this.person,
+  });
 
   final bool compact;
   final NetworkPersonDesignScreen person;
 
   @override
   Widget build(BuildContext context) {
-    return _TacticalPanel(
-      child: Column(
-        children: [
-          const _PanelHeading(
-            icon: Icons.hub_outlined,
-            label: 'PERSONA & RELATIONSHIP',
+    return Column(
+      children: [
+        const _PanelHeading(icon: Icons.slideshow_rounded, label: 'PERSONA'),
+        SizedBox(height: compact ? 4 : 8),
+        SizedBox(
+          width: compact ? 34 : 50,
+          height: compact ? 34 : 50,
+          child: CustomPaint(painter: DesignAvatarPainter(person.avatar)),
+        ),
+        SizedBox(height: compact ? 2 : 5),
+        Text(
+          '${person.name} · ${person.role}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFF2D586C),
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: compact ? 42 : 50,
-            height: compact ? 42 : 50,
-            child: CustomPaint(painter: DesignAvatarPainter(person.avatar)),
+        ),
+        SizedBox(height: compact ? 3 : 6),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: 7,
+            vertical: compact ? 3 : 5,
           ),
-          const SizedBox(height: 5),
-          Text(
-            '${person.name} · ${person.role}',
-            maxLines: 1,
+          decoration: BoxDecoration(
+            color: person.color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(7),
+            border: Border.all(color: person.color.withValues(alpha: 0.35)),
+          ),
+          child: Text(
+            person.persona,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF2D586C),
-              fontSize: 10,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: person.color,
+              fontSize: 7,
+              height: 1.2,
               fontWeight: FontWeight.w900,
             ),
           ),
-          Text(
-            person.team,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF728F9E),
-              fontSize: 7,
-              fontWeight: FontWeight.w600,
+        ),
+        SizedBox(height: compact ? 2 : 6),
+        if (!compact) const Text('RELATIONSHIP RADAR', style: _panelLabelStyle),
+        Expanded(
+          child: CustomPaint(
+            key: const ValueKey('home-persona-hexagon-chart'),
+            painter: PersonaHexagonPainterDesignScreen(
+              values: person.personaMetrics,
+              color: person.shirtColor,
             ),
+            child: const SizedBox.expand(),
           ),
-          if (!compact) ...[
-            const SizedBox(height: 6),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-              decoration: BoxDecoration(
-                color: person.color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(color: person.color.withValues(alpha: 0.35)),
-              ),
-              child: Text(
-                person.persona,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: person.color,
-                  fontSize: 7,
-                  height: 1.2,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 6),
-          const Text('RELATIONSHIP RADAR', style: _panelLabelStyle),
-          Expanded(
-            child: CustomPaint(
-              painter: _RadarPainter(),
-              child: const SizedBox.expand(),
-            ),
-          ),
-          const SizedBox(height: 5),
-          _Meter(label: 'Influence', value: person.influence),
-          _Meter(label: 'Trust', value: person.trust),
-          _Meter(label: 'Political risk', value: person.risk),
-        ],
-      ),
+        ),
+        const SizedBox(height: 5),
+        _Meter(label: 'Influence', value: person.influence),
+        _Meter(label: 'Trust', value: person.trust),
+        _Meter(label: 'Political risk', value: person.risk),
+      ],
     );
   }
 }
@@ -890,44 +960,56 @@ class _BottomNavigationState extends State<_BottomNavigation> {
       ),
       (Icons.more_horiz_rounded, 'More', () {}),
     ];
-    return Row(
-      children: [
-        for (final entry in items.indexed) ...[
-          if (entry.$1 > 0) const SizedBox(width: 5),
-          Expanded(
-            child: AnimatedScale(
-              key: ValueKey('home-nav-scale-${entry.$2.$2.toLowerCase()}'),
-              scale: pressedIndex == null
-                  ? entry.$2.$2 == 'Advice'
-                        ? 1.16
-                        : 1
-                  : pressedIndex == entry.$1
-                  ? entry.$2.$2 == 'Advice'
-                        ? 1.28
-                        : 1.16
-                  : 0.84,
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              child: _NavItem(
-                entry.$2.$1,
-                entry.$2.$2,
-                onTap: entry.$2.$3,
-                onPressedChanged: (pressed) {
-                  if (!mounted) return;
-                  setState(() {
-                    pressedIndex = pressed ? entry.$1 : null;
-                  });
-                },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        const adviceExtraWidth = 18.0;
+        final normalWidth = math.min(
+          104.0,
+          (constraints.maxWidth - gap * 6 - adviceExtraWidth) / 7,
+        );
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final entry in items.indexed) ...[
+              if (entry.$1 > 0) const SizedBox(width: gap),
+              SizedBox(
+                width:
+                    normalWidth +
+                    (entry.$2.$2 == 'Advice' ? adviceExtraWidth : 0),
+                child: AnimatedScale(
+                  key: ValueKey('home-nav-scale-${entry.$2.$2.toLowerCase()}'),
+                  scale: pressedIndex == null
+                      ? 1
+                      : pressedIndex == entry.$1
+                      ? entry.$2.$2 == 'Advice'
+                            ? 1.10
+                            : 1.12
+                      : 0.88,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: _NavItem(
+                    entry.$2.$1,
+                    entry.$2.$2,
+                    onTap: entry.$2.$3,
+                    onPressedChanged: (pressed) {
+                      if (!mounted) return;
+                      setState(() {
+                        pressedIndex = pressed ? entry.$1 : null;
+                      });
+                    },
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
-      ],
+            ],
+          ],
+        );
+      },
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _NavItem extends StatefulWidget {
   const _NavItem(
     this.icon,
     this.label, {
@@ -941,46 +1023,83 @@ class _NavItem extends StatelessWidget {
   final ValueChanged<bool> onPressedChanged;
 
   @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        key: ValueKey('home-nav-${label.toLowerCase()}'),
-        onTap: onTap,
-        onHighlightChanged: onPressedChanged,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          height: 36,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFFFFF), Color(0xFFE7F4FF)],
-            ),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFF65C5ED), width: 1.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x183299D0),
-                blurRadius: 5,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 7),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    const outline = LinearGradient(
+      colors: [Color(0xFF3DB9EE), Color(0xFF719CF4), Color(0xFFA386F5)],
+    );
+    return SizedBox(
+      height: 38,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          key: ValueKey('home-nav-${widget.label.toLowerCase()}'),
+          onTap: widget.onTap,
+          onHighlightChanged: (value) {
+            setState(() => pressed = value);
+            widget.onPressedChanged(value);
+          },
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          borderRadius: BorderRadius.circular(14),
+          child: Stack(
             children: [
-              Icon(icon, color: const Color(0xFF3299D0), size: 15),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF245672),
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
+              const Positioned.fill(
+                top: 4,
+                left: 4,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: outline,
+                    borderRadius: BorderRadius.all(Radius.circular(14)),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                right: 4,
+                bottom: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(2.5),
+                  decoration: const BoxDecoration(
+                    gradient: outline,
+                    borderRadius: BorderRadius.all(Radius.circular(14)),
+                  ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeInOut,
+                    decoration: BoxDecoration(
+                      color: pressed ? const Color(0xFFD2F2FF) : Colors.white,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          widget.icon,
+                          color: const Color(0xFF276F9E),
+                          size: 15,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: const Color(0xFF276F9E),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -996,18 +1115,26 @@ class _IsometricOffice extends StatelessWidget {
   const _IsometricOffice({
     required this.motion,
     required this.userPosition,
+    required this.canvasPadding,
     required this.onPersonSelected,
   });
 
   final double motion;
   final Offset userPosition;
+  final Offset canvasPadding;
   final ValueChanged<int> onPersonSelected;
 
   Offset _project(Offset point, Size size) {
-    return Offset(
-      size.width * 0.50 + (point.dx - point.dy) * size.width * 0.39,
-      size.height * 0.07 + (point.dx + point.dy) * size.height * 0.43,
+    final viewport = Size(
+      size.width - canvasPadding.dx * 2,
+      size.height - canvasPadding.dy * 2,
     );
+    return canvasPadding +
+        Offset(
+          viewport.width * 0.50 + (point.dx - point.dy) * viewport.width * 0.39,
+          viewport.height * 0.09 +
+              (point.dx + point.dy) * viewport.height * 0.405,
+        );
   }
 
   @override
@@ -1021,7 +1148,10 @@ class _IsometricOffice extends StatelessWidget {
           children: [
             Positioned.fill(
               child: CustomPaint(
-                painter: _OfficeMapPainter(userPosition: userPosition),
+                painter: _OfficeMapPainter(
+                  userPosition: userPosition,
+                  canvasPadding: canvasPadding,
+                ),
               ),
             ),
             for (final entry in officePeopleDesignScreen.indexed)
@@ -1050,7 +1180,7 @@ class _IsometricOffice extends StatelessWidget {
                   onTap: () => onPersonSelected(entry.$1),
                   onDragStart: (_) {},
                   onDragUpdate: (_) {},
-                  onDragEnd: (_) {},
+                  onDragEnd: () {},
                 ),
               ),
             Positioned(
@@ -1072,7 +1202,7 @@ class _IsometricOffice extends StatelessWidget {
                 onTap: () {},
                 onDragStart: (_) {},
                 onDragUpdate: (_) {},
-                onDragEnd: (_) {},
+                onDragEnd: () {},
               ),
             ),
           ],
@@ -1083,61 +1213,29 @@ class _IsometricOffice extends StatelessWidget {
 }
 
 class _OfficeMapPainter extends CustomPainter {
-  const _OfficeMapPainter({required this.userPosition});
+  const _OfficeMapPainter({
+    required this.userPosition,
+    required this.canvasPadding,
+  });
 
   final Offset userPosition;
+  final Offset canvasPadding;
 
   Offset project(Offset point, Size size) {
-    return Offset(
-      size.width * 0.50 + (point.dx - point.dy) * size.width * 0.39,
-      size.height * 0.07 + (point.dx + point.dy) * size.height * 0.43,
+    final viewport = Size(
+      size.width - canvasPadding.dx * 2,
+      size.height - canvasPadding.dy * 2,
     );
+    return canvasPadding +
+        Offset(
+          viewport.width * 0.50 + (point.dx - point.dy) * viewport.width * 0.39,
+          viewport.height * 0.09 +
+              (point.dx + point.dy) * viewport.height * 0.405,
+        );
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final top = project(Offset.zero, size);
-    final right = project(const Offset(1, 0), size);
-    final bottom = project(const Offset(1, 1), size);
-    final left = project(const Offset(0, 1), size);
-    final floor = Path()
-      ..moveTo(top.dx, top.dy)
-      ..lineTo(right.dx, right.dy)
-      ..lineTo(bottom.dx, bottom.dy)
-      ..lineTo(left.dx, left.dy)
-      ..close();
-
-    canvas.drawPath(
-      floor.shift(const Offset(0, 10)),
-      Paint()..color = const Color(0x33778FE8),
-    );
-    canvas.drawPath(floor, Paint()..color = const Color(0xFFDDF5FF));
-    canvas.drawPath(
-      floor,
-      Paint()
-        ..color = const Color(0xFF9EDCF5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-    );
-
-    final grid = Paint()
-      ..color = const Color(0x403299D0)
-      ..strokeWidth = 1;
-    for (var i = 1; i < 10; i++) {
-      final t = i / 10;
-      canvas
-        ..drawLine(
-          project(Offset(t, 0), size),
-          project(Offset(t, 1), size),
-          grid,
-        )
-        ..drawLine(
-          project(Offset(0, t), size),
-          project(Offset(1, t), size),
-          grid,
-        );
-    }
-
     _drawWallShape(
       canvas,
       size,
@@ -1266,7 +1364,8 @@ class _OfficeMapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _OfficeMapPainter oldDelegate) {
-    return oldDelegate.userPosition != userPosition;
+    return oldDelegate.userPosition != userPosition ||
+        oldDelegate.canvasPadding != canvasPadding;
   }
 
   void _drawWallShape(
@@ -1311,77 +1410,6 @@ class _OfficeMapPainter extends CustomPainter {
       ..close();
     canvas.drawPath(endCap, Paint()..color = const Color(0xFF778FE8));
   }
-}
-
-class _RadarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * 0.34;
-    const sides = 5;
-    final line = Paint()
-      ..color = const Color(0xFFB3CCD6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    for (var ring = 1; ring <= 3; ring++) {
-      final path = Path();
-      for (var i = 0; i < sides; i++) {
-        final angle = -math.pi / 2 + i * math.pi * 2 / sides;
-        final point =
-            center +
-            Offset(math.cos(angle), math.sin(angle)) * radius * (ring / 3);
-        i == 0
-            ? path.moveTo(point.dx, point.dy)
-            : path.lineTo(point.dx, point.dy);
-      }
-      path.close();
-      canvas.drawPath(path, line);
-    }
-
-    const values = [0.78, 0.58, 0.72, 0.43, 0.68];
-    final shape = Path();
-    for (var i = 0; i < sides; i++) {
-      final angle = -math.pi / 2 + i * math.pi * 2 / sides;
-      final point =
-          center +
-          Offset(math.cos(angle), math.sin(angle)) * radius * values[i];
-      i == 0
-          ? shape.moveTo(point.dx, point.dy)
-          : shape.lineTo(point.dx, point.dy);
-    }
-    shape.close();
-    canvas
-      ..drawPath(shape, Paint()..color = const Color(0x6638ACC1))
-      ..drawPath(
-        shape,
-        Paint()
-          ..color = const Color(0xFF2E9FB7)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _CircuitPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0x183B9BB8)
-      ..strokeWidth = 1;
-    for (double x = 18; x < size.width; x += 52) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 16; y < size.height; y += 52) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 final officePeopleDesignScreen = peopleNetworkPeopleDesignScreen
