@@ -48,6 +48,7 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
   bool analyzing = false;
   bool processingImage = false;
   bool listening = false;
+  bool keyboardInputModeDesignScreen = true;
 
   static const analysisLabels = [
     'Situation Summary',
@@ -82,6 +83,15 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
     }
     speech.cancel();
     super.dispose();
+  }
+
+  Future<void> showImageSourceDialogDesignScreen() async {
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => const _AdviceImageSourceDialog(),
+    );
+    if (source == null || !mounted) return;
+    await pickAndRecognizeDesignScreen(source);
   }
 
   Future<void> pickAndRecognizeDesignScreen(ImageSource source) async {
@@ -137,6 +147,24 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
       text: combined,
       selection: TextSelection.collapsed(offset: combined.length),
     );
+  }
+
+  Future<void> selectKeyboardInputDesignScreen() async {
+    if (speech.isListening) {
+      await speech.stop();
+    }
+    if (!mounted) return;
+    setState(() {
+      listening = false;
+      keyboardInputModeDesignScreen = true;
+      status = 'Keyboard ready. Type what happened.';
+    });
+    await requestAppKeyboard();
+  }
+
+  Future<void> selectVoiceInputDesignScreen() async {
+    setState(() => keyboardInputModeDesignScreen = false);
+    await toggleVoiceDesignScreen();
   }
 
   Future<void> toggleVoiceDesignScreen() async {
@@ -351,15 +379,25 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
                                             expands: true,
                                             minLines: null,
                                             maxLines: null,
+                                            readOnly: !keyboardInputModeDesignScreen,
                                             textAlignVertical:
                                                 TextAlignVertical.top,
-                                            onTap: requestAppKeyboard,
+                                            onTap: keyboardInputModeDesignScreen
+                                                ? requestAppKeyboard
+                                                : selectKeyboardInputDesignScreen,
                                             decoration: appInputDecoration(
                                               label: 'Situation and Question',
                                               hint:
-                                                  'Describe what happened, what concerns you, and the outcome you want...',
+                                                  keyboardInputModeDesignScreen
+                                                  ? 'Describe what happened, what concerns you, and the outcome you want...'
+                                                  : 'Voice input mode. Speak, or tap the keyboard to type.',
                                               contentPadding:
-                                                  const EdgeInsets.all(12),
+                                                  const EdgeInsets.fromLTRB(
+                                                    12,
+                                                    12,
+                                                    12,
+                                                    46,
+                                                  ),
                                             ),
                                           ),
                                           if (selectedImagePath != null)
@@ -377,54 +415,57 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
                                                 ),
                                               ),
                                             ),
+                                          Positioned(
+                                            left: 8,
+                                            bottom: 8,
+                                            child: _AdviceComposerCircle(
+                                              key: const ValueKey(
+                                                'advice-plus',
+                                              ),
+                                              icon: processingImage
+                                                  ? Icons.hourglass_top_rounded
+                                                  : Icons.add_rounded,
+                                              selected: false,
+                                              onPressed: processingImage
+                                                  ? null
+                                                  : showImageSourceDialogDesignScreen,
+                                            ),
+                                          ),
+                                          Positioned(
+                                            right: 8,
+                                            bottom: 8,
+                                            child: Row(
+                                              children: [
+                                                _AdviceComposerCircle(
+                                                  key: const ValueKey(
+                                                    'advice-voice',
+                                                  ),
+                                                  icon: listening
+                                                      ? Icons
+                                                            .stop_circle_rounded
+                                                      : Icons.mic_rounded,
+                                                  selected:
+                                                      !keyboardInputModeDesignScreen,
+                                                  onPressed:
+                                                      selectVoiceInputDesignScreen,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                _AdviceComposerCircle(
+                                                  key: const ValueKey(
+                                                    'advice-keyboard',
+                                                  ),
+                                                  icon: Icons
+                                                      .keyboard_rounded,
+                                                  selected:
+                                                      keyboardInputModeDesignScreen,
+                                                  onPressed:
+                                                      selectKeyboardInputDesignScreen,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ],
                                       ),
-                                    ),
-                                    const SizedBox(height: 7),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _InputToolButton(
-                                            key: const ValueKey(
-                                              'advice-camera',
-                                            ),
-                                            icon: Icons.camera_alt_rounded,
-                                            label: 'Camera',
-                                            busy: processingImage,
-                                            onPressed: () =>
-                                                pickAndRecognizeDesignScreen(
-                                                  ImageSource.camera,
-                                                ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: _InputToolButton(
-                                            key: const ValueKey(
-                                              'advice-gallery',
-                                            ),
-                                            icon: Icons.photo_library_rounded,
-                                            label: 'Photos',
-                                            busy: processingImage,
-                                            onPressed: () =>
-                                                pickAndRecognizeDesignScreen(
-                                                  ImageSource.gallery,
-                                                ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: _InputToolButton(
-                                            key: const ValueKey('advice-voice'),
-                                            icon: listening
-                                                ? Icons.stop_circle_rounded
-                                                : Icons.mic_rounded,
-                                            label: listening ? 'Stop' : 'Voice',
-                                            selected: listening,
-                                            onPressed: toggleVoiceDesignScreen,
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),
@@ -447,13 +488,13 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
                                     const SizedBox(height: 4),
                                     Expanded(
                                       child: ListView.separated(
-                                        padding: EdgeInsets.zero,
+                                        padding: const EdgeInsets.only(top: 8),
                                         itemCount: analysisLabels.length,
                                         separatorBuilder: (_, _) =>
-                                            const SizedBox(height: 7),
+                                            const SizedBox(height: 8),
                                         itemBuilder: (context, index) =>
                                             SizedBox(
-                                              height: 60,
+                                              height: 68,
                                               child: TextField(
                                                 key: ValueKey(
                                                   'advice-analysis-$index',
@@ -462,15 +503,30 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
                                                     analysisControllers[index],
                                                 maxLines: 2,
                                                 decoration: appInputDecoration(
-                                                  label: analysisLabels[index],
                                                   hint: 'Not analyzed yet',
                                                   contentPadding:
                                                       const EdgeInsets.fromLTRB(
                                                         10,
-                                                        11,
+                                                        16,
                                                         10,
                                                         6,
                                                       ),
+                                                ).copyWith(
+                                                  label: FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    alignment: Alignment.centerLeft,
+                                                    child: Text(
+                                                      analysisLabels[index],
+                                                      maxLines: 1,
+                                                      softWrap: false,
+                                                      style: const TextStyle(
+                                                        color: Color(0xFF318DB6),
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -497,11 +553,17 @@ class _AdviceInputDesignScreenState extends State<AdviceInputDesignScreen> {
                               ),
                             ),
                             SizedBox(
-                              width: 140,
+                              width: 125,
+                              height: 49,
                               child: AppButton(
                                 label: 'Analyze',
                                 leading: const Icon(Icons.auto_awesome_rounded),
                                 busy: analyzing,
+                                height: 49,
+                                animateScale: false,
+                                visualKey: const ValueKey(
+                                  'advice-analyze-visual',
+                                ),
                                 onPressed: analyzing
                                     ? null
                                     : analyzeDesignScreen,
@@ -630,64 +692,229 @@ class _VoiceLanguageSelector extends StatelessWidget {
   }
 }
 
-class _InputToolButton extends StatelessWidget {
-  const _InputToolButton({
+class _AdviceImageSourceDialog extends StatelessWidget {
+  const _AdviceImageSourceDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: 430,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+        ),
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF39BCEA), Color(0xFF68A8F5), Color(0xFFA184F0)],
+          ),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FCFF),
+            borderRadius: BorderRadius.circular(21),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDDF2FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_photo_alternate_outlined,
+                        color: Color(0xFF238DCC),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Add an image',
+                        style: TextStyle(
+                          color: Color(0xFF143D5B),
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      color: const Color(0xFF4C7895),
+                    ),
+                  ],
+                ),
+                const Text(
+                  'Use a photo from this device or take a new one. Do not upload confidential workplace material.',
+                  style: TextStyle(
+                    color: Color(0xFF54758B),
+                    fontSize: 11,
+                    height: 1.3,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AdviceImageSourceOption(
+                  key: const ValueKey('advice-gallery'),
+                  icon: Icons.photo_library_rounded,
+                  title: 'Photo from device',
+                  subtitle:
+                      'Choose an existing image for on-device text recognition.',
+                  onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+                ),
+                const SizedBox(height: 8),
+                _AdviceImageSourceOption(
+                  key: const ValueKey('advice-camera'),
+                  icon: Icons.camera_alt_rounded,
+                  title: 'Take photo',
+                  subtitle: 'Capture a new photo with the camera.',
+                  onTap: () => Navigator.of(context).pop(ImageSource.camera),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    width: 105,
+                    child: AppButton(
+                      label: 'Cancel',
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdviceImageSourceOption extends StatelessWidget {
+  const _AdviceImageSourceOption({
     super.key,
     required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.selected = false,
-    this.busy = false,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
   });
 
   final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  final bool selected;
-  final bool busy;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFFDDF5FF) : Colors.white,
-      borderRadius: BorderRadius.circular(10),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: busy ? null : onPressed,
-        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 38,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: selected
-                  ? const Color(0xFF806DE2)
-                  : const Color(0xFF65C5ED),
-              width: 1.5,
-            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF65C5ED), width: 1.5),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (busy)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(icon, color: const Color(0xFF3299D0), size: 16),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF245672),
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDDF2FF),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: const Color(0xFF238DCC), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xFF143D5B),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xFF54758B),
+                        fontSize: 10,
+                        height: 1.25,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AdviceComposerCircle extends StatelessWidget {
+  const _AdviceComposerCircle({
+    super.key,
+    required this.icon,
+    required this.selected,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFF3299D0) : Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? const Color(0xFF3299D0) : const Color(0xFF65C5ED),
+          width: 1.5,
+        ),
+      ),
+      child: Icon(
+        icon,
+        size: 16,
+        color: selected ? Colors.white : const Color(0xFF3299D0),
+      ),
+    );
+    if (onPressed == null) return button;
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: button,
       ),
     );
   }

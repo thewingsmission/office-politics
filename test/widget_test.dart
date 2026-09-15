@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:office_politics/app.dart';
 import 'package:office_politics/core/theme/app_theme.dart';
 import 'package:office_politics/core/widgets/app_button.dart';
+import 'package:office_politics/core/widgets/physical_keyboard_text_input.dart';
 import 'package:office_politics/features/account/application/session_controller.dart';
 import 'package:office_politics/features/account/data/local_account_repository.dart';
 import 'package:office_politics/features/engineering/data/first_launch_design_draft.dart';
@@ -185,8 +187,8 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    Future<void> openAndVerify(String buttonLabel, String scenarioLabel) async {
-      final button = find.text(buttonLabel);
+    Future<void> openAndVerify(Key buttonKey, String scenarioLabel) async {
+      final button = find.byKey(buttonKey);
       await tester.scrollUntilVisible(
         button,
         220,
@@ -207,12 +209,24 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    await openAndVerify('Colleague Screen', 'First Launch');
-    await openAndVerify('Relationship Setup Screen', 'First Launch');
-    await openAndVerify('Create Colleague', 'Create');
-    await openAndVerify('Modify Colleague', 'Modify');
-    await openAndVerify('Create Relationship', 'Create');
-    await openAndVerify('Modify Relationship', 'Modify');
+    await openAndVerify(
+      const ValueKey('engineering-colleague-default'),
+      'First Launch',
+    );
+    await openAndVerify(
+      const ValueKey('engineering-relationship-setup-default'),
+      'First Launch',
+    );
+    await openAndVerify(const ValueKey('engineering-colleague-create'), 'Create');
+    await openAndVerify(const ValueKey('engineering-colleague-modify'), 'Modify');
+    await openAndVerify(
+      const ValueKey('engineering-relationship-setup-create'),
+      'Create',
+    );
+    await openAndVerify(
+      const ValueKey('engineering-relationship-setup-modify'),
+      'Modify',
+    );
   });
 
   testWidgets('all design previews fit a landscape phone', (tester) async {
@@ -407,6 +421,43 @@ void main() {
     expect(field.controller!.text, '123456789012345');
     expect(find.text('123456789012345'), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('physical keyboard types into a focused text field', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(956, 440);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: PhysicalKeyboardTextInput(child: NameSetupDesignScreen()),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('name-setup-field')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK, character: 'k');
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('name-setup-field')))
+          .controller!
+          .text,
+      'k',
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('name-setup-field')))
+          .controller!
+          .text,
+      '',
+    );
   });
 
   testWidgets('auth design chooses a method before showing email fields', (
@@ -1147,6 +1198,8 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Modify a Colleague'), findsOneWidget);
+    expect(find.text('Update this\ncolleague'), findsOneWidget);
+    expect(find.textContaining('Fields start prefilled for Alex'), findsOneWidget);
     expect(find.text('Observed Style'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('workspace-scenario-selector')));
     await tester.pumpAndSettle();
@@ -1156,6 +1209,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('workspace-scenario-create')));
     await tester.pump();
     expect(find.text('Create a Colleague'), findsOneWidget);
+    expect(find.text('Add another\ncolleague'), findsOneWidget);
+    expect(find.textContaining('Fields start blank'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('workspace-scenario-create')),
       findsOneWidget,
@@ -1907,11 +1962,11 @@ void main() {
       expect(find.text('PERSONA'), findsOneWidget);
       expect(
         tester.getRect(find.byKey(const ValueKey('home-left-panel'))),
-        const Rect.fromLTWH(12, 43, 232, 331),
+        const Rect.fromLTWH(12, 19, 232, 355),
       );
       expect(
         tester.getRect(find.byKey(const ValueKey('home-right-panel'))),
-        const Rect.fromLTWH(756, 43, 188, 331),
+        const Rect.fromLTWH(756, 19, 188, 355),
       );
       expect(find.textContaining('Panel H'), findsNothing);
       final homeHexagonPainter = tester
@@ -2155,10 +2210,44 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('advice-camera')), findsOneWidget);
-    expect(find.byKey(const ValueKey('advice-gallery')), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-plus')), findsOneWidget);
     expect(find.byKey(const ValueKey('advice-voice')), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-keyboard')), findsOneWidget);
     expect(find.byKey(const ValueKey('advice-voice-language')), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('advice-input-notes')))
+          .readOnly,
+      isFalse,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('advice-plus')));
+    await tester.pumpAndSettle();
+    expect(find.text('Add an image'), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-gallery')), findsOneWidget);
+    expect(find.byKey(const ValueKey('advice-camera')), findsOneWidget);
+    expect(find.text('Photo from device'), findsOneWidget);
+    expect(find.text('Take photo'), findsOneWidget);
+    await tester.tap(find.widgetWithText(AppButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add an image'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('advice-voice')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('advice-input-notes')))
+          .readOnly,
+      isTrue,
+    );
+    await tester.tap(find.byKey(const ValueKey('advice-keyboard')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('advice-input-notes')))
+          .readOnly,
+      isFalse,
+    );
 
     await tester.enterText(
       find.byKey(const ValueKey('advice-input-notes')),

@@ -244,6 +244,7 @@ class _EventEditorDesignScreenState extends State<EventEditorDesignScreen> {
                               controller: promptController,
                               maxLines: 2,
                               textAlignVertical: TextAlignVertical.top,
+                              onTap: requestAppKeyboard,
                               decoration: appInputDecoration(
                                 hint:
                                     'Describe the event freely. Include when, who, what happened, and how you felt...',
@@ -273,6 +274,7 @@ class _EventEditorDesignScreenState extends State<EventEditorDesignScreen> {
                           child: TextField(
                             key: const ValueKey('event-title-field'),
                             controller: titleController,
+                            onTap: requestAppKeyboard,
                             decoration: appInputDecoration(
                               label: 'Event Title',
                               hint: 'Short description of the event',
@@ -284,6 +286,7 @@ class _EventEditorDesignScreenState extends State<EventEditorDesignScreen> {
                           child: TextField(
                             key: const ValueKey('event-date-field'),
                             controller: dateTimeController,
+                            onTap: requestAppKeyboard,
                             decoration: appInputDecoration(
                               label: 'Date and Time',
                               hint: 'Example: 12 Sep 2026, 3:30 PM',
@@ -296,6 +299,7 @@ class _EventEditorDesignScreenState extends State<EventEditorDesignScreen> {
                           child: TextField(
                             key: const ValueKey('event-people-field'),
                             controller: peopleController,
+                            onTap: requestAppKeyboard,
                             decoration: appInputDecoration(
                               label: 'Involved People',
                               hint: 'Use pseudonyms',
@@ -317,6 +321,7 @@ class _EventEditorDesignScreenState extends State<EventEditorDesignScreen> {
                               minLines: null,
                               maxLines: null,
                               textAlignVertical: TextAlignVertical.top,
+                              onTap: requestAppKeyboard,
                               decoration: appInputDecoration(
                                 label: 'Detailed Story',
                                 hint:
@@ -333,6 +338,7 @@ class _EventEditorDesignScreenState extends State<EventEditorDesignScreen> {
                               minLines: null,
                               maxLines: null,
                               textAlignVertical: TextAlignVertical.top,
+                              onTap: requestAppKeyboard,
                               decoration: appInputDecoration(
                                 label: 'Your Personal Feeling',
                                 hint:

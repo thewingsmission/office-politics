@@ -67,16 +67,14 @@ class _EngineeringScreenState extends State<EngineeringScreen> {
                       entry.screenId,
                     )!;
                     return EngineeringDesignButton(
+                      key: ValueKey(
+                        'engineering-${entry.screenId}-${entry.mode ?? 'default'}',
+                      ),
                       definition: definition,
-                      displayName: entry.displayName,
+                      initialSettings: entry.initialSettings,
                       onPressed: () {
-                        final firstLaunchAvatar =
-                            group.title == 'First Launch' &&
-                            definition.id == 'face-lab';
                         final mode = entry.mode == null
-                            ? firstLaunchAvatar
-                                  ? '?mode=first-launch'
-                                  : ''
+                            ? ''
                             : '?mode=${entry.mode}';
                         context.go('/design/${definition.id}$mode');
                       },
@@ -190,36 +188,54 @@ class _EngineeringGroup {
   final List<String> screenIds;
 
   List<_EngineeringScreenEntry> get entries {
-    if (title != 'People & Relationships') {
+    if (title == 'First Launch') {
       return [
         for (final screenId in screenIds)
-          _EngineeringScreenEntry(screenId: screenId),
+          _EngineeringScreenEntry(
+            screenId: screenId,
+            mode: screenId == 'face-lab' ? 'first-launch' : null,
+            initialSettings: switch (screenId) {
+              'colleague' => 'Blank first colleague',
+              'relationship-setup' => 'Blank · You & Alex',
+              'face-lab' => 'You then Alex',
+              _ => null,
+            },
+          ),
       ];
     }
-    return const [
-      _EngineeringScreenEntry(screenId: 'people-network'),
-      _EngineeringScreenEntry(
-        screenId: 'colleague',
-        mode: 'create',
-        displayName: 'Create Colleague',
-      ),
-      _EngineeringScreenEntry(
-        screenId: 'colleague',
-        mode: 'modify',
-        displayName: 'Modify Colleague',
-      ),
-      _EngineeringScreenEntry(screenId: 'face-lab'),
-      _EngineeringScreenEntry(screenId: 'character-profile'),
-      _EngineeringScreenEntry(
-        screenId: 'relationship-setup',
-        mode: 'create',
-        displayName: 'Create Relationship',
-      ),
-      _EngineeringScreenEntry(
-        screenId: 'relationship-setup',
-        mode: 'modify',
-        displayName: 'Modify Relationship',
-      ),
+    if (title == 'People & Relationships') {
+      return const [
+        _EngineeringScreenEntry(screenId: 'people-network'),
+        _EngineeringScreenEntry(
+          screenId: 'colleague',
+          mode: 'create',
+          initialSettings: 'Blank new colleague',
+        ),
+        _EngineeringScreenEntry(
+          screenId: 'colleague',
+          mode: 'modify',
+          initialSettings: 'Prefilled · Alex',
+        ),
+        _EngineeringScreenEntry(
+          screenId: 'face-lab',
+          initialSettings: 'Modify · Alex',
+        ),
+        _EngineeringScreenEntry(screenId: 'character-profile'),
+        _EngineeringScreenEntry(
+          screenId: 'relationship-setup',
+          mode: 'create',
+          initialSettings: 'Blank pair · You & Alex',
+        ),
+        _EngineeringScreenEntry(
+          screenId: 'relationship-setup',
+          mode: 'modify',
+          initialSettings: 'Prefilled · You & Alex',
+        ),
+      ];
+    }
+    return [
+      for (final screenId in screenIds)
+        _EngineeringScreenEntry(screenId: screenId),
     ];
   }
 }
@@ -228,12 +244,12 @@ class _EngineeringScreenEntry {
   const _EngineeringScreenEntry({
     required this.screenId,
     this.mode,
-    this.displayName,
+    this.initialSettings,
   });
 
   final String screenId;
   final String? mode;
-  final String? displayName;
+  final String? initialSettings;
 }
 
 const engineeringGroupsDesignScreen = <_EngineeringGroup>[
@@ -347,14 +363,14 @@ class EngineeringDesignButton extends StatefulWidget {
     super.key,
     required this.definition,
     required this.onPressed,
-    this.displayName,
+    this.initialSettings,
   });
 
   final DesignScreenDefinition definition;
   final VoidCallback onPressed;
-  final String? displayName;
+  final String? initialSettings;
 
-  String get resolvedDisplayName => displayName ?? definition.displayName;
+  String get resolvedDisplayName => definition.displayName;
 
   @override
   State<EngineeringDesignButton> createState() =>
@@ -526,20 +542,38 @@ class _EngineeringDesignButtonState extends State<EngineeringDesignButton> {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFDDF2FF),
-                                  borderRadius: BorderRadius.circular(8),
+                              if (widget.initialSettings == null)
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDDF2FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    widget.definition.icon,
+                                    color: const Color(0xFF238DCC),
+                                    size: 13,
+                                  ),
+                                )
+                              else
+                                Expanded(
+                                  child: Text(
+                                    widget.initialSettings!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFF278DC8),
+                                      fontSize: 9.45,
+                                      height: 1.1,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
                                 ),
-                                child: Icon(
-                                  widget.definition.icon,
-                                  color: const Color(0xFF238DCC),
-                                  size: 13,
-                                ),
-                              ),
-                              const Spacer(),
+                              if (widget.initialSettings == null)
+                                const Spacer()
+                              else
+                                const SizedBox(width: 4),
                               Tooltip(
                                 message: 'About this screen',
                                 child: Material(

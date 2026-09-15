@@ -665,6 +665,8 @@ class _WorkspaceHero extends StatelessWidget {
       onBack: onBack,
       child: step == 4
           ? _RelationshipSetupHero(scenario: scenario, compact: compact)
+          : step == 3
+          ? _ColleagueSetupHero(scenario: scenario, compact: compact)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -696,6 +698,66 @@ class _WorkspaceHero extends StatelessWidget {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _ColleagueSetupHero extends StatelessWidget {
+  const _ColleagueSetupHero({required this.scenario, required this.compact});
+
+  final WorkspaceScenarioDesignScreen scenario;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final copy = switch (scenario) {
+      WorkspaceScenarioDesignScreen.create => (
+        title: 'Add another\ncolleague',
+        body:
+            'Fields start blank. Record a new person with a pseudonym, role, and observed style. Relationship details come later.',
+      ),
+      WorkspaceScenarioDesignScreen.modify => (
+        title: 'Update this\ncolleague',
+        body:
+            'Fields start prefilled for Alex. Review and change only this person’s recorded facts.',
+      ),
+      _ => (
+        title: 'Add your first\ncolleague',
+        body:
+            'Record only the essentials now. You can expand and refine everything later.',
+      ),
+    };
+    return Column(
+      key: const ValueKey('colleague-setup-hero'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Spacer(),
+        Icon(
+          Icons.person_add_alt_1_rounded,
+          color: const Color(0xFF3299D0),
+          size: compact ? 40 : 55,
+        ),
+        SizedBox(height: compact ? 4 : 8),
+        Text(
+          copy.title,
+          style: TextStyle(
+            color: const Color(0xFF174765),
+            fontSize: compact ? 19 : 24,
+            height: 1.06,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: compact ? 4 : 8),
+        Text(
+          copy.body,
+          style: TextStyle(
+            color: const Color(0xFF56819A),
+            fontSize: compact ? 7.5 : 9,
+            height: compact ? 1.25 : 1.35,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -314,7 +314,7 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
                       Positioned(
                         key: const ValueKey('home-left-panel'),
                         left: 12,
-                        top: 43,
+                        top: 19,
                         bottom: 66,
                         width: leftWidth,
                         child: AnimatedBuilder(
@@ -333,7 +333,7 @@ class _HomeDesignScreenState extends State<HomeDesignScreen>
                       Positioned(
                         key: const ValueKey('home-right-panel'),
                         right: 12,
-                        top: 43,
+                        top: 19,
                         bottom: 66,
                         width: rightWidth,
                         child: AnimatedBuilder(
